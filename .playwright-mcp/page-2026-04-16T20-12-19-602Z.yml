@@ -1,0 +1,82 @@
+- generic [active] [ref=e1]:
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - generic [ref=e9]: R+
+          - generic [ref=e10]:
+            - heading "ReserFlow" [level=1] [ref=e11]
+            - paragraph [ref=e12]: Marketing Auto-Dashboard · RESER+
+        - generic [ref=e13]:
+          - link "Ajustes" [ref=e14] [cursor=pointer]:
+            - /url: /ajustes
+          - button "Cerrar sesión" [ref=e16] [cursor=pointer]
+      - main [ref=e17]:
+        - generic [ref=e19]:
+          - generic [ref=e20]:
+            - heading "Generador de carruseles" [level=2] [ref=e21]
+            - paragraph [ref=e22]: Describe un tema y la IA genera el copy completo para tu carrusel de Instagram.
+          - generic [ref=e23]:
+            - generic [ref=e24]:
+              - generic [ref=e25]:
+                - heading "Generar carrusel" [level=2] [ref=e26]
+                - paragraph [ref=e27]: Describe el tema y la IA construye el contenido completo.
+              - generic [ref=e28]:
+                - generic [ref=e29]:
+                  - generic [ref=e30]: Tema o idea central *
+                  - 'textbox "Ej: 5 razones para reservar tu cancha con anticipación y no quedarte sin lugar el fin de semana" [ref=e31]'
+                - generic [ref=e32]:
+                  - generic [ref=e33]:
+                    - generic [ref=e34]: Pilar de contenido
+                    - combobox [ref=e35]:
+                      - option "Sin pilar específico" [selected]
+                      - option "Reservas"
+                      - option "Deporte"
+                      - option "Comunidad"
+                      - option "Tips"
+                      - option "Otro"
+                  - generic [ref=e36]:
+                    - generic [ref=e37]: Tono
+                    - combobox [ref=e38]:
+                      - option "Educativo" [selected]
+                      - option "Motivador"
+                      - option "Promocional"
+                      - option "Entretenido"
+                - generic [ref=e39]:
+                  - generic [ref=e40]: "Número de slides: 6"
+                  - slider [ref=e41]: "6"
+                  - generic [ref=e42]:
+                    - generic [ref=e43]: 4 slides
+                    - generic [ref=e44]: 10 slides
+                - button "Generar con IA" [disabled] [ref=e45]
+            - generic [ref=e46]:
+              - img [ref=e48]
+              - paragraph [ref=e50]: Preview del carrusel
+              - paragraph [ref=e51]: Completa el formulario y el carrusel generado aparecerá aquí para revisión.
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - heading "Calendario de contenido" [level=2] [ref=e55]
+            - paragraph [ref=e56]: Programa tus carruseles y visualiza el mes completo de publicaciones.
+          - generic [ref=e57]:
+            - generic [ref=e58]:
+              - heading "abril 2026" [level=2] [ref=e59]
+              - generic [ref=e60]:
+                - button "←" [ref=e61] [cursor=pointer]
+                - button "Hoy" [ref=e62] [cursor=pointer]
+                - button "→" [ref=e63] [cursor=pointer]
+            - generic [ref=e64]:
+              - generic [ref=e65]:
+                - generic [ref=e66]: Lun
+                - generic [ref=e67]: Mar
+                - generic [ref=e68]: Mié
+                - generic [ref=e69]: Jue
+                - generic [ref=e70]: Vie
+                - generic [ref=e71]: Sáb
+                - generic [ref=e72]: Dom
+              - generic [ref=e73]: Cargando calendario...
+            - generic [ref=e74]:
+              - generic [ref=e75]: Programado
+              - generic [ref=e77]: Publicado
+              - generic [ref=e79]: Fallido
+  - button "Open Next.js Dev Tools" [ref=e86] [cursor=pointer]:
+    - img [ref=e87]

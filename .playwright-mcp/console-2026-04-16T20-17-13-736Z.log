@@ -1,0 +1,359 @@
+[     114ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     150ms] [LOG] [Fast Refresh] done in 139ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     909ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     938ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  177036ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  177443ms] [LOG] [Fast Refresh] done in 510ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  178376ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3000/ajustes:0
+[  178376ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3000/ajustes:0
+[  622124ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  622283ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  622451ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  622676ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  622677ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/dashboard?_rsc=1g955:0
+[  622705ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/dashboard?_rsc=1g955:0
+[  622743ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/dashboard:0
+[  622882ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_react-dom_0bruynb._.js:15305
+[  622950ms] Error: ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (Error: ./src/features/settings/services/analyze-logo.ts:4:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at Object.getCompilationErrors (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\dev\hot-reloader-turbopack.js:1186:59)
+    at DevBundlerService.getCompilationError (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\lib\dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\dev\next-dev-server.js:719:42)
+    at DevServer.findPageComponents (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\dev\next-dev-server.js:689:43)
+    at async DevServer.renderErrorToResponseImpl (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\base-server.js:1745:26)
+[  622950ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  622955ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  623045ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  623070ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  626621ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  626708ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/dashboard:0
+[  626754ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_react-dom_0bruynb._.js:15305
+[  626773ms] Error: ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (Error: ./src/features/settings/services/analyze-logo.ts:4:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at Object.getCompilationErrors (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\dev\hot-reloader-turbopack.js:1186:59)
+    at DevBundlerService.getCompilationError (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\lib\dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\dev\next-dev-server.js:719:42)
+    at DevServer.findPageComponents (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\dev\next-dev-server.js:689:43)
+    at async DevServer.renderErrorToResponseImpl (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\base-server.js:1745:26)
+[  626777ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  626780ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  626822ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  626887ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  645757ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  645933ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  646016ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  646089ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  646139ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  646272ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  646274ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  646441ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  646880ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/dashboard:0
+[  646955ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_react-dom_0bruynb._.js:15305
+[  646973ms] Error: ./node_modules/openai/resources/beta/chatkit/chatkit.js:5:17
+Module not found: Can't resolve '../../../internal/tslib.js'
+  3 | Object.defineProperty(exports, "__esModule", { value: true });
+  4 | exports.ChatKit = void 0;
+> 5 | const tslib_1 = require("../../../internal/tslib.js");
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 | const resource_1 = require("../../../core/resource.js");
+  7 | const SessionsAPI = tslib_1.__importStar(require("./sessions.js"));
+  8 | const sessions_1 = require("./sessions.js");
+
+
+
+Import trace:
+  Server Component:
+    ./node_modules/openai/resources/beta/chatkit/chatkit.js
+    ./node_modules/openai/resources/beta/beta.js
+    ./node_modules/openai/client.js
+    ./node_modules/openai/index.js
+    ./src/features/settings/services/analyze-logo.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (Error: ./node_modules/openai/resources/beta/chatkit/chatkit.js:5:17)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at Object.getCompilationErrors (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\dev\hot-reloader-turbopack.js:1186:59)
+    at DevBundlerService.getCompilationError (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\lib\dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\dev\next-dev-server.js:719:42)
+    at DevServer.findPageComponents (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\dev\next-dev-server.js:689:43)
+    at async DevServer.renderErrorToResponseImpl (file://C:\RepositorioSaaSFactory\ReserFlow\node_modules\next\dist\server\base-server.js:1745:26)
+[  646973ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  646981ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  647026ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  647069ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  647128ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  647337ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  647404ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  647674ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  647724ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  647855ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  647907ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  648186ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  648216ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  648538ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  648574ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  648640ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  648718ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  648774ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  648872ms] [ERROR] ./src/features/settings/services/analyze-logo.ts:4:1
+Module not found: Can't resolve 'openai'
+  2 |
+  3 | import { createClient } from '@/lib/supabase/server'
+> 4 | import OpenAI from 'openai'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+  7 |
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  648908ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  649436ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  650162ms] [LOG] [Fast Refresh] done in 435ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  651316ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  651341ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  651504ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  651522ms] [LOG] [Fast Refresh] done in 123ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  651781ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  652572ms] [LOG] [Fast Refresh] done in 860ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431

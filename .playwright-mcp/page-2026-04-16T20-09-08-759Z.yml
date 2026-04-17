@@ -1,0 +1,126 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e192] [cursor=pointer]:
+    - generic [ref=e195]:
+      - text: Rendering
+      - generic [ref=e196]:
+        - generic [ref=e197]: .
+        - generic [ref=e198]: .
+        - generic [ref=e199]: .
+  - alert [ref=e41]
+  - main [ref=e43]:
+    - generic [ref=e44]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - generic [ref=e49]: R+
+          - generic [ref=e50]:
+            - heading "ReserFlow" [level=1] [ref=e51]
+            - paragraph [ref=e52]: Marketing Auto-Dashboard · RESER+
+        - generic [ref=e53]:
+          - link "Ajustes" [ref=e54] [cursor=pointer]:
+            - /url: /ajustes
+          - button "Cerrar sesión" [ref=e56] [cursor=pointer]
+      - main [ref=e57]:
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - heading "Generador de carruseles" [level=2] [ref=e61]
+            - paragraph [ref=e62]: Describe un tema y la IA genera el copy completo para tu carrusel de Instagram.
+          - generic [ref=e63]:
+            - generic [ref=e64]:
+              - generic [ref=e65]:
+                - heading "Generar carrusel" [level=2] [ref=e66]
+                - paragraph [ref=e67]: Describe el tema y la IA construye el contenido completo.
+              - generic [ref=e68]:
+                - generic [ref=e69]:
+                  - generic [ref=e70]: Tema o idea central *
+                  - 'textbox "Ej: 5 razones para reservar tu cancha con anticipación y no quedarte sin lugar el fin de semana" [ref=e71]': 5 razones para reservar tu cancha de pádel con anticipación y no quedarte sin lugar el fin de semana
+                - generic [ref=e72]:
+                  - generic [ref=e73]:
+                    - generic [ref=e74]: Pilar de contenido
+                    - combobox [ref=e75]:
+                      - option "Sin pilar específico"
+                      - option "Reservas" [selected]
+                      - option "Deporte"
+                      - option "Comunidad"
+                      - option "Tips"
+                      - option "Otro"
+                  - generic [ref=e76]:
+                    - generic [ref=e77]: Tono
+                    - combobox [ref=e78]:
+                      - option "Educativo"
+                      - option "Motivador" [selected]
+                      - option "Promocional"
+                      - option "Entretenido"
+                - generic [ref=e79]:
+                  - generic [ref=e80]: "Número de slides: 6"
+                  - slider [ref=e81]: "6"
+                  - generic [ref=e82]:
+                    - generic [ref=e83]: 4 slides
+                    - generic [ref=e84]: 10 slides
+                - button "Generando carrusel..." [disabled] [ref=e200]:
+                  - generic [ref=e201]:
+                    - img [ref=e202]
+                    - text: Generando carrusel...
+            - generic [ref=e86]:
+              - img [ref=e88]
+              - paragraph [ref=e90]: Preview del carrusel
+              - paragraph [ref=e91]: Completa el formulario y el carrusel generado aparecerá aquí para revisión.
+        - generic [ref=e93]:
+          - generic [ref=e94]:
+            - heading "Calendario de contenido" [level=2] [ref=e95]
+            - paragraph [ref=e96]: Programa tus carruseles y visualiza el mes completo de publicaciones.
+          - generic [ref=e97]:
+            - generic [ref=e98]:
+              - heading "abril 2026" [level=2] [ref=e99]
+              - generic [ref=e100]:
+                - button "←" [ref=e101] [cursor=pointer]
+                - button "Hoy" [ref=e102] [cursor=pointer]
+                - button "→" [ref=e103] [cursor=pointer]
+            - generic [ref=e104]:
+              - generic [ref=e105]:
+                - generic [ref=e106]: Lun
+                - generic [ref=e107]: Mar
+                - generic [ref=e108]: Mié
+                - generic [ref=e109]: Jue
+                - generic [ref=e110]: Vie
+                - generic [ref=e111]: Sáb
+                - generic [ref=e112]: Dom
+              - generic [ref=e113]:
+                - generic [ref=e115]: "30"
+                - generic [ref=e117]: "31"
+                - generic [ref=e119]: "1"
+                - generic [ref=e121]: "2"
+                - generic [ref=e123]: "3"
+                - generic [ref=e125]: "4"
+                - generic [ref=e127]: "5"
+                - generic [ref=e129]: "6"
+                - generic [ref=e131]: "7"
+                - generic [ref=e133]: "8"
+                - generic [ref=e135]: "9"
+                - generic [ref=e137]: "10"
+                - generic [ref=e139]: "11"
+                - generic [ref=e141]: "12"
+                - generic [ref=e143]: "13"
+                - generic [ref=e145]: "14"
+                - generic [ref=e147]: "15"
+                - generic [ref=e149]: "16"
+                - generic [ref=e151]: "17"
+                - generic [ref=e153]: "18"
+                - generic [ref=e155]: "19"
+                - generic [ref=e157]: "20"
+                - generic [ref=e159]: "21"
+                - generic [ref=e161]: "22"
+                - generic [ref=e163]: "23"
+                - generic [ref=e165]: "24"
+                - generic [ref=e167]: "25"
+                - generic [ref=e169]: "26"
+                - generic [ref=e171]: "27"
+                - generic [ref=e173]: "28"
+                - generic [ref=e175]: "29"
+                - generic [ref=e177]: "30"
+                - generic [ref=e179]: "1"
+                - generic [ref=e181]: "2"
+                - generic [ref=e183]: "3"
+            - generic [ref=e184]:
+              - generic [ref=e185]: Programado
+              - generic [ref=e187]: Publicado
+              - generic [ref=e189]: Fallido

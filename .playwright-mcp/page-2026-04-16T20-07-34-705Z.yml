@@ -1,0 +1,28 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - heading "Welcome back" [level=1] [ref=e6]
+      - paragraph [ref=e7]: Sign in to your account
+    - generic [ref=e8]:
+      - button "Continuar con Google" [ref=e9] [cursor=pointer]:
+        - img [ref=e10]
+        - text: Continuar con Google
+      - generic [ref=e19]: o
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e22]: Email
+          - textbox "Email" [ref=e23]
+        - generic [ref=e24]:
+          - generic [ref=e25]: Password
+          - textbox "Password" [ref=e26]
+        - button "Sign In" [ref=e27] [cursor=pointer]
+        - paragraph [ref=e28]:
+          - link "Forgot password?" [ref=e29] [cursor=pointer]:
+            - /url: /forgot-password
+    - paragraph [ref=e30]:
+      - text: Don't have an account?
+      - link "Sign up" [ref=e31] [cursor=pointer]:
+        - /url: /signup
+  - button "Open Next.js Dev Tools" [ref=e37] [cursor=pointer]:
+    - img [ref=e38]
+  - alert [ref=e41]
