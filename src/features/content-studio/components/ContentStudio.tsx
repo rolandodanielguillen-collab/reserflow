@@ -173,7 +173,7 @@ function CalendarPiece({ piece, dark, status, onClick }: { piece: ContentPiece; 
         {piece.type === 'carousel' && piece.slides ? (
           <ScaledSlide slide={piece.slides[0]!} dark={dark} index={0} total={piece.slides.length} width={width}/>
         ) : (
-          <VideoPreview dark={dark} width={width}/>
+          <VideoPreview dark={dark} width={width} scriptId={piece.script}/>
         )}
         <div style={{ position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: 4, background: sColor, boxShadow: '0 0 0 2px rgba(0,0,0,0.25)' }}/>
         {piece.type === 'video' && (
@@ -219,7 +219,7 @@ function PieceCard({ piece, dark, onClick, statusColor }: { piece: ContentPiece;
         {piece.type === 'carousel' && piece.slides ? (
           <ScaledSlide slide={piece.slides[0]!} dark={dark} index={0} total={piece.slides.length} width={120}/>
         ) : (
-          <VideoPreview dark={dark} width={120}/>
+          <VideoPreview dark={dark} width={120} scriptId={piece.script}/>
         )}
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -305,7 +305,7 @@ function Modal({ piece, dark, statuses, onClose, onChangeStatus }: {
             {piece.type === 'carousel' && piece.slides ? (
               <ScaledSlide slide={piece.slides[idx]!} dark={dark} index={idx} total={total} width={previewW}/>
             ) : (
-              <VideoPreview dark={dark} width={previewW}/>
+              <VideoPreview dark={dark} width={previewW} scriptId={piece.script}/>
             )}
             {piece.type === 'carousel' && total > 1 && (
               <>

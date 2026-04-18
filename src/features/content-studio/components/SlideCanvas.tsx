@@ -486,23 +486,5 @@ export function ScaledSlide({ slide, dark, index, total, cta, width }: ScaledSli
   )
 }
 
-// ── VideoPreview placeholder ──────────────────────────────────────────────
-export function VideoPreview({ dark = true, width }: { dark?: boolean; width: number }) {
-  const height = Math.round(width * (SLIDE_H / SLIDE_W))
-  return (
-    <div style={{
-      width, height,
-      background: dark ? T.navyDeep : T.cream,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      gap: 12,
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      <div style={{ position: 'absolute', inset: 0, opacity: 0.04, backgroundImage: `linear-gradient(to right,${dark ? T.cream : T.navy} 1px,transparent 1px),linear-gradient(to bottom,${dark ? T.cream : T.navy} 1px,transparent 1px)`, backgroundSize: '30px 30px' }}/>
-      <div style={{ width: width * 0.18, height: width * 0.18, borderRadius: '50%', background: T.mint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: width * 0.08, color: T.navy, position: 'relative', zIndex: 1 }}>▶</div>
-      <div style={{ fontFamily: FM, fontSize: width * 0.05, letterSpacing: '0.14em', color: dark ? 'rgba(245,242,235,0.55)' : 'rgba(15,30,61,0.55)', textTransform: 'uppercase', position: 'relative', zIndex: 1 }}>
-        VIDEO 10s
-      </div>
-    </div>
-  )
-}
+// ── VideoPreview — delegated to VideoCanvas ───────────────────────────────
+export { VideoPreview } from './VideoCanvas'
