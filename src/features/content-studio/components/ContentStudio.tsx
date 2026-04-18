@@ -397,8 +397,9 @@ function MetaRow({ label, value, ink, inkSoft }: { label: string; value: string;
 }
 
 // ── Top Bar ───────────────────────────────────────────────────────────────
-function TopBar({ dark, view, setView, filter, setFilter }: {
+function TopBar({ dark, toggleDark, view, setView, filter, setFilter }: {
   dark: boolean
+  toggleDark: () => void
   view: 'calendar' | 'list'
   setView: (v: 'calendar' | 'list') => void
   filter: string
@@ -444,6 +445,11 @@ function TopBar({ dark, view, setView, filter, setFilter }: {
         <option value="edificios">Edificios</option>
       </select>
 
+      {/* Dark/Light toggle */}
+      <button onClick={toggleDark} title={dark ? 'Modo claro' : 'Modo oscuro'} style={{ all: 'unset', cursor: 'pointer', width: 36, height: 36, borderRadius: 10, background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(15,30,61,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: dark ? T.cream : T.navy, transition: 'background 160ms' }}>
+        {dark ? '☀️' : '🌙'}
+      </button>
+
       {/* Nueva pieza button */}
       <button style={{ all: 'unset', cursor: 'pointer', padding: '9px 18px', background: T.mint, color: T.navy, borderRadius: 10, fontFamily: FD, fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
         <svg width="14" height="14" viewBox="0 0 14 14"><rect x="4" y="0" width="6" height="14" fill={T.navy}/><rect x="0" y="4" width="14" height="6" fill={T.navy}/></svg>
@@ -459,11 +465,13 @@ export function ContentStudio() {
   const [view, setView]       = useState<'calendar' | 'list'>('calendar')
   const [filter, setFilter]   = useState('all')
   const [selectedId, setSelectedId] = useState<number | null>(null)
-  const dark = true
+  const [dark, setDark] = useState(true)
   const [statuses, setStatuses] = useState<Record<number, PieceStatus>>({})
 
   useEffect(() => {
     setMounted(true)
+    const savedDark = localStorage.getItem('reser-cs-dark')
+    if (savedDark !== null) setDark(savedDark !== 'false')
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
@@ -482,6 +490,14 @@ export function ContentStudio() {
     if (!mounted) return
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(statuses)) } catch {}
   }, [statuses, mounted])
+
+  const toggleDark = useCallback(() => {
+    setDark(d => {
+      const next = !d
+      localStorage.setItem('reser-cs-dark', String(next))
+      return next
+    })
+  }, [])
 
   const setStatus = useCallback((id: number, s: PieceStatus) => {
     setStatuses(prev => ({ ...prev, [id]: s }))
@@ -502,7 +518,7 @@ export function ContentStudio() {
 
   return (
     <div style={{ minHeight: '100vh', background: bgColor, color: dark ? T.cream : T.navy, fontFamily: FD }}>
-      <TopBar dark={dark} view={view} setView={setView} filter={filter} setFilter={setFilter}/>
+      <TopBar dark={dark} toggleDark={toggleDark} view={view} setView={setView} filter={filter} setFilter={setFilter}/>
 
       <div style={{ padding: '24px 40px 80px' }}>
         <HeadlineStrip statuses={statuses} dark={dark}/>
