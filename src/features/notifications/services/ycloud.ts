@@ -52,13 +52,32 @@ export async function notifyDraftReady(carouselId: string, title: string) {
 
   if (!brand?.whatsapp_phone) return
 
-  const message = `✅ *ReserFlow* — Tu carrusel está listo para revisar:\n\n📝 *${title}*\n\nIngresá al dashboard para editarlo y programarlo.\n🔗 ${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/dashboard`
+  // Track which carousel is pending approval
+  await supabase
+    .from('brand_settings')
+    .update({ pending_approval_carousel_id: carouselId })
+    .eq('user_id', user.id)
+
+  const message = `🗓 *Reser+* — Carrusel listo para aprobar:\n\n📝 *${title}*\n\nRespondé *Sí* para aprobar y programar, o *No* para rechazar.`
 
   try {
     await sendWhatsApp({ to: brand.whatsapp_phone, message })
   } catch (err) {
     console.error('[YCloud] Error enviando notificación de borrador:', err)
   }
+}
+
+export async function sendApprovalRequest(carouselId: string, title: string, phone: string, userId: string) {
+  const supabase = await createClient()
+
+  await supabase
+    .from('brand_settings')
+    .update({ pending_approval_carousel_id: carouselId })
+    .eq('user_id', userId)
+
+  const message = `🗓 *Reser+* — Nuevo carrusel listo para aprobar:\n\n📝 *${title}*\n\nRespondé *Sí* para aprobar o *No* para rechazar.`
+
+  return sendWhatsApp({ to: phone, message })
 }
 
 export async function notifyPublished(title: string, permalink: string, phone: string) {

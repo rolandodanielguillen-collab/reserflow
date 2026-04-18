@@ -3,36 +3,23 @@ import { createClient } from '@supabase/supabase-js'
 
 /**
  * Cron job: publica los carruseles programados cuya fecha ya pasó.
- * Se invoca vía Vercel Cron o llamada externa con el CRON_SECRET.
- *
- * Vercel cron config en vercel.json:
- * { "crons": [{ "path": "/api/cron/publish-scheduled", "schedule": "0 * * * *" }] }
+ * Vercel Cron: { "path": "/api/cron/publish-scheduled", "schedule": "0 * * * *" }
  */
 export async function GET(request: Request) {
-  // Verificar autenticación del cron
   const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Usar service role para acceso completo
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Obtener carruseles programados cuya fecha ya llegó
   const now = new Date().toISOString()
   const { data: duePosts, error } = await supabase
     .from('carousels')
-    .select(`
-      id,
-      user_id,
-      title,
-      slides_json,
-      scheduled_at,
-      content_ideas!inner(*)
-    `)
+    .select('id, user_id, title, caption')
     .eq('status', 'scheduled')
     .lte('scheduled_at', now)
     .limit(10)
@@ -46,20 +33,12 @@ export async function GET(request: Request) {
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  const ycApiKey = process.env.YCLOUD_API_KEY
+  const ycFrom  = process.env.YCLOUD_WHATSAPP_FROM
 
   const results = await Promise.allSettled(
     duePosts.map(async post => {
-      const { data: brand } = await supabase
-        .from('brand_settings')
-        .select('meta_access_token, instagram_account_id')
-        .eq('user_id', post.user_id)
-        .single()
-
-      if (!brand?.meta_access_token) {
-        return { id: post.id, status: 'skipped', reason: 'Sin credenciales de Meta' }
-      }
-
-      // Renderizar slides → subir a Cloudinary → publicar en Instagram
+      // Publish via export-and-publish pipeline
       const res = await fetch(`${siteUrl}/api/publishing/export-and-publish`, {
         method: 'POST',
         headers: {
@@ -68,7 +47,28 @@ export async function GET(request: Request) {
         },
         body: JSON.stringify({ carouselId: post.id }),
       })
-      const result = await res.json() as { error?: string; postId?: string }
+      const result = await res.json() as { error?: string; postId?: string; permalink?: string }
+
+      // Send WhatsApp notification (best-effort)
+      const { data: brand } = await supabase
+        .from('brand_settings')
+        .select('whatsapp_phone')
+        .eq('user_id', post.user_id)
+        .maybeSingle()
+
+      const phone = brand?.whatsapp_phone as string | undefined
+
+      if (phone && ycApiKey && ycFrom) {
+        const msg = result.error
+          ? `⚠️ *Reser+* — Error al publicar:\n\n📸 *${post.title}*\n❌ ${result.error}`
+          : `🚀 *Reser+* — Publicado en Instagram:\n\n📸 *${post.title}*\n🔗 ${result.permalink ?? ''}`
+
+        await fetch('https://api.ycloud.com/v2/whatsapp/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': ycApiKey },
+          body: JSON.stringify({ from: ycFrom, to: phone, type: 'text', text: { body: msg } }),
+        }).catch(e => console.error('[Cron] WA notify failed:', e))
+      }
 
       if (result.error) return { id: post.id, status: 'failed', reason: result.error }
       return { id: post.id, status: 'published', postId: result.postId }

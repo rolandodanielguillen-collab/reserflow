@@ -37,7 +37,8 @@ const SLIDE_H = 1350
 
 // ── Primitives ────────────────────────────────────────────────────────────
 
-function GridTexture({ th }: { th: typeof DARK }) {
+function GridTexture({ th, forCapture }: { th: typeof DARK; forCapture?: boolean }) {
+  if (forCapture) return null
   return (
     <div style={{
       position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.035,
@@ -49,22 +50,24 @@ function GridTexture({ th }: { th: typeof DARK }) {
 
 function BigPlus({ size = 600, color, opacity = 1, style }: { size?: number; color: string; opacity?: number; style?: CSSProperties }) {
   return (
-    <svg viewBox="0 0 100 100" width={size} height={size} style={{ opacity, ...style }}>
-      <rect x="38" y="0" width="24" height="100" fill={color}/>
-      <rect x="0" y="38" width="100" height="24" fill={color}/>
-    </svg>
+    <div style={{ width: size, height: size, opacity, flexShrink: 0, position: 'relative', ...style }}>
+      <div style={{ position: 'absolute', left: '38%', top: 0, width: '24%', height: '100%', background: color }}/>
+      <div style={{ position: 'absolute', top: '38%', left: 0, height: '24%', width: '100%', background: color }}/>
+    </div>
   )
 }
 
 function ReserLogo({ dark = false, size = 56 }: { dark?: boolean; size?: number }) {
   const color = dark ? T.cream : T.navy
+  const s = size * 0.85
+  const bar = s * 0.24
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: size * 0.12, fontFamily: FD, fontWeight: 900, fontSize: size, letterSpacing: '-0.04em', color, lineHeight: 1 }}>
       <span>RESER</span>
-      <svg viewBox="0 0 100 100" width={size * 0.85} height={size * 0.85} style={{ position: 'relative', top: size * 0.02 }}>
-        <rect x="38" y="8" width="24" height="84" fill={T.mint}/>
-        <rect x="8" y="38" width="84" height="24" fill={T.mint}/>
-      </svg>
+      <div style={{ position: 'relative', width: s, height: s, flexShrink: 0, top: size * 0.02 }}>
+        <div style={{ position: 'absolute', left: '38%', top: '8%', width: '24%', height: '84%', background: T.mint }}/>
+        <div style={{ position: 'absolute', top: '38%', left: '8%', height: '24%', width: '84%', background: T.mint }}/>
+      </div>
     </div>
   )
 }
@@ -81,13 +84,13 @@ function BrandFoot({ th, idx, total, cta, dark }: { th: typeof DARK; idx: number
   )
 }
 
-function Frame({ dark, idx, total, footCta, showFoot = true, children }: {
-  dark: boolean; idx: number; total: number; footCta?: string; showFoot?: boolean; children: React.ReactNode
+function Frame({ dark, idx, total, footCta, showFoot = true, forCapture, children }: {
+  dark: boolean; idx: number; total: number; footCta?: string; showFoot?: boolean; forCapture?: boolean; children: React.ReactNode
 }) {
   const th = dark ? DARK : LIGHT
   return (
     <div style={{ width: SLIDE_W, height: SLIDE_H, background: th.bg, position: 'relative', overflow: 'hidden', fontFamily: FD, color: th.ink }}>
-      <GridTexture th={th}/>
+      <GridTexture th={th} forCapture={forCapture}/>
       {children}
       {showFoot && <BrandFoot th={th} idx={idx} total={total} cta={footCta} dark={dark}/>}
     </div>
@@ -96,11 +99,20 @@ function Frame({ dark, idx, total, footCta, showFoot = true, children }: {
 
 // ── Slide renderers ───────────────────────────────────────────────────────
 
-function CoverSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kind: 'cover' }>; dark: boolean; idx: number; total: number; cta?: string }) {
+type SlideProps<K extends DesignSlide['kind']> = {
+  s: Extract<DesignSlide, { kind: K }>
+  dark: boolean
+  idx: number
+  total: number
+  cta?: string
+  forCapture?: boolean
+}
+
+function CoverSlide({ s, dark, idx, total, cta, forCapture }: SlideProps<'cover'>) {
   const th = dark ? DARK : LIGHT
   return (
-    <Frame dark={dark} idx={idx} total={total} footCta={cta}>
-      <BigPlus size={820} color={th.accent} opacity={dark ? 0.10 : 0.08} style={{ position: 'absolute', right: -280, top: -240 }}/>
+    <Frame dark={dark} idx={idx} total={total} footCta={cta} forCapture={forCapture}>
+      <BigPlus size={820} color={th.accent} opacity={dark ? 0.05 : 0.04} style={{ position: 'absolute', right: -280, top: -240 }}/>
       <div style={{ position: 'absolute', left: 64, top: 64 }}>
         <div style={{ fontFamily: FM, fontSize: 18, letterSpacing: '0.18em', color: th.accent, textTransform: 'uppercase', fontWeight: 600 }}>
           {s.eyebrow || 'RESER+'}
@@ -120,10 +132,10 @@ function CoverSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { ki
   )
 }
 
-function StatSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kind: 'stat' }>; dark: boolean; idx: number; total: number; cta?: string }) {
+function StatSlide({ s, dark, idx, total, cta, forCapture }: SlideProps<'stat'>) {
   const th = dark ? DARK : LIGHT
   return (
-    <Frame dark={dark} idx={idx} total={total} footCta={cta}>
+    <Frame dark={dark} idx={idx} total={total} footCta={cta} forCapture={forCapture}>
       <div style={{ position: 'absolute', inset: 64, bottom: 180, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div style={{ fontFamily: FD, fontWeight: 900, fontSize: 320, lineHeight: 0.9, letterSpacing: '-0.06em', color: th.accent }}>
           {s.top}
@@ -141,10 +153,10 @@ function StatSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kin
   )
 }
 
-function StepsSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kind: 'steps' }>; dark: boolean; idx: number; total: number; cta?: string }) {
+function StepsSlide({ s, dark, idx, total, cta, forCapture }: SlideProps<'steps'>) {
   const th = dark ? DARK : LIGHT
   return (
-    <Frame dark={dark} idx={idx} total={total} footCta={cta}>
+    <Frame dark={dark} idx={idx} total={total} footCta={cta} forCapture={forCapture}>
       <div style={{ position: 'absolute', left: 64, right: 64, top: 80 }}>
         <h2 style={{ fontFamily: FD, fontWeight: 900, fontSize: 88, lineHeight: 0.98, letterSpacing: '-0.04em', margin: 0, color: th.ink }}>{s.title}</h2>
       </div>
@@ -160,18 +172,18 @@ function StepsSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { ki
   )
 }
 
-function ChatSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kind: 'chat' }>; dark: boolean; idx: number; total: number; cta?: string }) {
+function ChatSlide({ s, dark, idx, total, cta, forCapture }: SlideProps<'chat'>) {
   const th = dark ? DARK : LIGHT
   const chatBg = dark ? '#0b141a' : '#ECE5DD'
   const incoming = dark ? '#202C33' : '#FFFFFF'
   const outgoing = dark ? '#005C4B' : '#DCF8C6'
   const textC = dark ? '#E9EDEF' : '#111B21'
   return (
-    <Frame dark={dark} idx={idx} total={total} footCta={cta}>
+    <Frame dark={dark} idx={idx} total={total} footCta={cta} forCapture={forCapture}>
       <div style={{ position: 'absolute', left: 120, right: 120, top: 100, bottom: 220, background: chatBg, borderRadius: 44, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: dark ? '0 30px 80px rgba(0,0,0,0.5)' : '0 30px 80px rgba(15,30,61,0.18)', border: `1px solid ${th.line}` }}>
         <div style={{ background: dark ? '#1F2C34' : '#F0F2F5', padding: '22px 28px', display: 'flex', alignItems: 'center', gap: 18, borderBottom: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)'}` }}>
           <div style={{ width: 56, height: 56, borderRadius: 28, background: T.navy, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg viewBox="0 0 100 100" width={30} height={30}><rect x="38" y="8" width="24" height="84" fill={T.mint}/><rect x="8" y="38" width="84" height="24" fill={T.mint}/></svg>
+            <div style={{ position: 'relative', width: 30, height: 30 }}><div style={{ position: 'absolute', left: '38%', top: '8%', width: '24%', height: '84%', background: T.mint }}/><div style={{ position: 'absolute', top: '38%', left: '8%', height: '24%', width: '84%', background: T.mint }}/></div>
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 26, color: dark ? '#E9EDEF' : '#111B21', letterSpacing: '-0.02em' }}>Reser+</div>
@@ -195,10 +207,10 @@ function ChatSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kin
   )
 }
 
-function BeforeAfterSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kind: 'beforeAfter' }>; dark: boolean; idx: number; total: number; cta?: string }) {
+function BeforeAfterSlide({ s, dark, idx, total, cta, forCapture }: SlideProps<'beforeAfter'>) {
   const th = dark ? DARK : LIGHT
   return (
-    <Frame dark={dark} idx={idx} total={total} footCta={cta}>
+    <Frame dark={dark} idx={idx} total={total} footCta={cta} forCapture={forCapture}>
       <div style={{ position: 'absolute', left: 64, right: 64, top: 80, bottom: 180, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28 }}>
         <div style={{ background: th.panel, border: `1px solid ${th.line}`, borderRadius: 24, padding: 36, display: 'flex', flexDirection: 'column' }}>
           <div style={{ fontFamily: FM, fontSize: 16, letterSpacing: '0.16em', color: th.inkMute, textTransform: 'uppercase', marginBottom: 20 }}>{s.before.title}</div>
@@ -227,10 +239,10 @@ function BeforeAfterSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide
   )
 }
 
-function QuoteSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kind: 'quote' }>; dark: boolean; idx: number; total: number; cta?: string }) {
+function QuoteSlide({ s, dark, idx, total, cta, forCapture }: SlideProps<'quote'>) {
   const th = dark ? DARK : LIGHT
   return (
-    <Frame dark={dark} idx={idx} total={total} footCta={cta}>
+    <Frame dark={dark} idx={idx} total={total} footCta={cta} forCapture={forCapture}>
       <div style={{ position: 'absolute', left: 80, right: 80, top: 140, bottom: 220, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div style={{ fontFamily: FD, fontWeight: 900, fontSize: 260, color: th.accent, lineHeight: 0.6, marginBottom: 20, letterSpacing: '-0.05em' }}>"</div>
         <div style={{ fontFamily: FD, fontWeight: 600, fontSize: 72, lineHeight: 1.08, letterSpacing: '-0.035em', color: th.ink, whiteSpace: 'pre-line' }}>
@@ -246,10 +258,10 @@ function QuoteSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { ki
   )
 }
 
-function IconListSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kind: 'iconList' }>; dark: boolean; idx: number; total: number; cta?: string }) {
+function IconListSlide({ s, dark, idx, total, cta, forCapture }: SlideProps<'iconList'>) {
   const th = dark ? DARK : LIGHT
   return (
-    <Frame dark={dark} idx={idx} total={total} footCta={cta}>
+    <Frame dark={dark} idx={idx} total={total} footCta={cta} forCapture={forCapture}>
       <div style={{ position: 'absolute', left: 64, right: 64, top: 80 }}>
         <h2 style={{ fontFamily: FD, fontWeight: 900, fontSize: 72, lineHeight: 1.02, letterSpacing: '-0.035em', margin: 0, color: th.ink, maxWidth: 820 }}>{s.title}</h2>
       </div>
@@ -265,10 +277,10 @@ function IconListSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, {
   )
 }
 
-function ChecklistSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kind: 'checklist' }>; dark: boolean; idx: number; total: number; cta?: string }) {
+function ChecklistSlide({ s, dark, idx, total, cta, forCapture }: SlideProps<'checklist'>) {
   const th = dark ? DARK : LIGHT
   return (
-    <Frame dark={dark} idx={idx} total={total} footCta={cta}>
+    <Frame dark={dark} idx={idx} total={total} footCta={cta} forCapture={forCapture}>
       <div style={{ position: 'absolute', left: 64, right: 64, top: 80 }}>
         <h2 style={{ fontFamily: FD, fontWeight: 900, fontSize: 64, lineHeight: 1.02, letterSpacing: '-0.03em', margin: 0, color: th.ink, maxWidth: 880 }}>{s.title}</h2>
       </div>
@@ -284,10 +296,10 @@ function ChecklistSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, 
   )
 }
 
-function CrossListSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kind: 'crossList' }>; dark: boolean; idx: number; total: number; cta?: string }) {
+function CrossListSlide({ s, dark, idx, total, cta, forCapture }: SlideProps<'crossList'>) {
   const th = dark ? DARK : LIGHT
   return (
-    <Frame dark={dark} idx={idx} total={total} footCta={cta}>
+    <Frame dark={dark} idx={idx} total={total} footCta={cta} forCapture={forCapture}>
       <div style={{ position: 'absolute', left: 64, right: 64, top: 100, bottom: 200, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 18 }}>
         {s.items.map((item, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 28, fontFamily: FD, fontWeight: 700, fontSize: 54, letterSpacing: '-0.025em', lineHeight: 1.1, color: th.inkSoft, textDecoration: 'line-through', textDecorationColor: th.accent, textDecorationThickness: '6px' }}>
@@ -299,10 +311,10 @@ function CrossListSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, 
   )
 }
 
-function BigNumberSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kind: 'bigNumber' }>; dark: boolean; idx: number; total: number; cta?: string }) {
+function BigNumberSlide({ s, dark, idx, total, cta, forCapture }: SlideProps<'bigNumber'>) {
   const th = dark ? DARK : LIGHT
   return (
-    <Frame dark={dark} idx={idx} total={total} footCta={cta}>
+    <Frame dark={dark} idx={idx} total={total} footCta={cta} forCapture={forCapture}>
       <div style={{ position: 'absolute', inset: 64, bottom: 180, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div style={{ fontFamily: FD, fontWeight: 900, fontSize: 480, lineHeight: 0.85, letterSpacing: '-0.07em', color: th.accent }}>
           {s.number}
@@ -316,10 +328,10 @@ function BigNumberSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, 
   )
 }
 
-function PlusGridSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kind: 'plusGrid' }>; dark: boolean; idx: number; total: number; cta?: string }) {
+function PlusGridSlide({ s, dark, idx, total, cta, forCapture }: SlideProps<'plusGrid'>) {
   const th = dark ? DARK : LIGHT
   return (
-    <Frame dark={dark} idx={idx} total={total} footCta={cta}>
+    <Frame dark={dark} idx={idx} total={total} footCta={cta} forCapture={forCapture}>
       <div style={{ position: 'absolute', left: 64, right: 64, top: 100, bottom: 200, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 24 }}>
         {s.items.map((item, i) => (
           <div key={i} style={{ background: i % 3 === 0 ? th.accent : th.panel, borderRadius: 24, border: `1px solid ${i % 3 === 0 ? 'transparent' : th.line}`, padding: 36, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', color: i % 3 === 0 ? T.navy : th.ink }}>
@@ -332,10 +344,10 @@ function PlusGridSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, {
   )
 }
 
-function ImageBlockSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kind: 'imageBlock' }>; dark: boolean; idx: number; total: number; cta?: string }) {
+function ImageBlockSlide({ s, dark, idx, total, cta, forCapture }: SlideProps<'imageBlock'>) {
   const th = dark ? DARK : LIGHT
   return (
-    <Frame dark={dark} idx={idx} total={total} footCta={cta}>
+    <Frame dark={dark} idx={idx} total={total} footCta={cta} forCapture={forCapture}>
       <div style={{ position: 'absolute', left: 64, right: 64, top: 80, bottom: 200, display: 'flex', flexDirection: 'column', gap: 32 }}>
         <div style={{
           flex: 1, borderRadius: 24, overflow: 'hidden', position: 'relative',
@@ -354,11 +366,11 @@ function ImageBlockSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide,
   )
 }
 
-function CtaSlide({ s, dark, idx, total }: { s: Extract<DesignSlide, { kind: 'cta' }>; dark: boolean; idx: number; total: number }) {
+function CtaSlide({ s, dark, idx, total, forCapture }: { s: Extract<DesignSlide, { kind: 'cta' }>; dark: boolean; idx: number; total: number; forCapture?: boolean }) {
   const th = dark ? DARK : LIGHT
   return (
-    <Frame dark={dark} idx={idx} total={total} showFoot={false}>
-      <BigPlus size={1400} color={th.accent} opacity={dark ? 0.14 : 0.10} style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)' }}/>
+    <Frame dark={dark} idx={idx} total={total} showFoot={false} forCapture={forCapture}>
+      <BigPlus size={1400} color={th.accent} opacity={dark ? 0.07 : 0.05} style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)' }}/>
       <div style={{ position: 'absolute', left: 64, right: 64, top: 120 }}><ReserLogo dark={dark} size={44}/></div>
       <div style={{ position: 'absolute', left: 64, right: 64, top: '42%', transform: 'translateY(-50%)' }}>
         <h1 style={{ fontFamily: FD, fontWeight: 900, fontSize: 144, lineHeight: 0.93, letterSpacing: '-0.045em', margin: 0, whiteSpace: 'pre-line', color: th.ink }}>
@@ -375,10 +387,10 @@ function CtaSlide({ s, dark, idx, total }: { s: Extract<DesignSlide, { kind: 'ct
   )
 }
 
-function ListSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kind: 'list' }>; dark: boolean; idx: number; total: number; cta?: string }) {
+function ListSlide({ s, dark, idx, total, cta, forCapture }: SlideProps<'list'>) {
   const th = dark ? DARK : LIGHT
   return (
-    <Frame dark={dark} idx={idx} total={total} footCta={cta}>
+    <Frame dark={dark} idx={idx} total={total} footCta={cta} forCapture={forCapture}>
       <div style={{ position: 'absolute', left: 64, right: 64, top: 120, bottom: 200, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 32 }}>
         {s.items.map((item, i) => (
           <div key={i} style={{ fontFamily: FD, fontWeight: 700, fontSize: 62, lineHeight: 1.02, letterSpacing: '-0.03em', color: th.ink }}>
@@ -390,11 +402,11 @@ function ListSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kin
   )
 }
 
-function FlowScreenSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide, { kind: 'flowScreen' }>; dark: boolean; idx: number; total: number; cta?: string }) {
+function FlowScreenSlide({ s, dark, idx, total, cta, forCapture }: SlideProps<'flowScreen'>) {
   const th = dark ? DARK : LIGHT
   const phoneW = 620, phoneH = 1120
   return (
-    <Frame dark={dark} idx={idx} total={total} footCta={cta}>
+    <Frame dark={dark} idx={idx} total={total} footCta={cta} forCapture={forCapture}>
       <div style={{ position: 'absolute', left: 64, top: 80, width: 380 }}>
         <div style={{ fontFamily: FM, fontSize: 18, letterSpacing: '0.16em', color: th.accent, textTransform: 'uppercase', fontWeight: 600, marginBottom: 28 }}>{s.eyebrow || 'RESERVÁ POR WHATSAPP'}</div>
         <div style={{ fontFamily: FD, fontWeight: 900, fontSize: 76, lineHeight: 0.96, letterSpacing: '-0.04em', color: th.ink, whiteSpace: 'pre-line' }}>{s.big}</div>
@@ -406,7 +418,7 @@ function FlowScreenSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide,
           <div style={{ padding: '8px 18px 12px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             <span style={{ fontSize: 22, opacity: 0.8 }}>‹</span>
             <div style={{ width: 40, height: 40, borderRadius: 20, background: T.navy, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg viewBox="0 0 100 100" width={20} height={20}><rect x="38" y="8" width="24" height="84" fill={T.mint}/><rect x="8" y="38" width="84" height="24" fill={T.mint}/></svg>
+              <div style={{ position: 'relative', width: 20, height: 20 }}><div style={{ position: 'absolute', left: '38%', top: '8%', width: '24%', height: '84%', background: T.mint }}/><div style={{ position: 'absolute', top: '38%', left: '8%', height: '24%', width: '84%', background: T.mint }}/></div>
             </div>
             <span style={{ fontSize: 18, fontWeight: 600, opacity: 0.8 }}>Reser+</span>
           </div>
@@ -442,8 +454,8 @@ function FlowScreenSlide({ s, dark, idx, total, cta }: { s: Extract<DesignSlide,
 }
 
 // ── Dispatcher ────────────────────────────────────────────────────────────
-function SlideRenderer({ slide, dark, idx, total, cta }: { slide: DesignSlide; dark: boolean; idx: number; total: number; cta?: string }) {
-  const p = { dark, idx, total, cta }
+function SlideRenderer({ slide, dark, idx, total, cta, forCapture }: { slide: DesignSlide; dark: boolean; idx: number; total: number; cta?: string; forCapture?: boolean }) {
+  const p = { dark, idx, total, cta, forCapture }
   switch (slide.kind) {
     case 'cover':       return <CoverSlide s={slide} {...p}/>
     case 'stat':        return <StatSlide s={slide} {...p}/>
@@ -457,7 +469,7 @@ function SlideRenderer({ slide, dark, idx, total, cta }: { slide: DesignSlide; d
     case 'bigNumber':   return <BigNumberSlide s={slide} {...p}/>
     case 'plusGrid':    return <PlusGridSlide s={slide} {...p}/>
     case 'imageBlock':  return <ImageBlockSlide s={slide} {...p}/>
-    case 'cta':         return <CtaSlide s={slide} dark={dark} idx={idx} total={total}/>
+    case 'cta':         return <CtaSlide s={slide} dark={dark} idx={idx} total={total} forCapture={forCapture}/>
     case 'list':        return <ListSlide s={slide} {...p}/>
     case 'flowScreen':  return <FlowScreenSlide s={slide} {...p}/>
     default:            return <QuoteSlide s={{ kind: 'quote', text: '—' }} {...p}/>
@@ -472,15 +484,16 @@ export interface ScaledSlideProps {
   total: number
   cta?: string
   width: number
+  forCapture?: boolean
 }
 
-export function ScaledSlide({ slide, dark, index, total, cta, width }: ScaledSlideProps) {
+export function ScaledSlide({ slide, dark, index, total, cta, width, forCapture }: ScaledSlideProps) {
   const scale = width / SLIDE_W
   const height = SLIDE_H * scale
   return (
     <div style={{ width, height, position: 'relative', flexShrink: 0, overflow: 'hidden' }}>
       <div style={{ width: SLIDE_W, height: SLIDE_H, transform: `scale(${scale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0 }}>
-        <SlideRenderer slide={slide} dark={dark} idx={index} total={total} cta={cta}/>
+        <SlideRenderer slide={slide} dark={dark} idx={index} total={total} cta={cta} forCapture={forCapture}/>
       </div>
     </div>
   )

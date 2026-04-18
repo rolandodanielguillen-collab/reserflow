@@ -87,7 +87,7 @@ interface TimelineCtx {
   playing: boolean
 }
 
-const TimelineContext = createContext<TimelineCtx>({ time: 0, duration: 10, playing: false })
+export const TimelineContext = createContext<TimelineCtx>({ time: 0, duration: 10, playing: false })
 
 function useTime() {
   return useContext(TimelineContext).time
@@ -666,7 +666,7 @@ function BeforeAfterScene({ dark, cta, b = 'El caos', a = 'Reser+' }: { dark: bo
 }
 
 // ── VideoScene dispatcher ─────────────────────────────────────────────────
-function VideoScene({ scriptId, dark, cta }: { scriptId: string; dark: boolean; cta?: string }) {
+export function VideoScene({ scriptId, dark, cta }: { scriptId: string; dark: boolean; cta?: string }) {
   switch (scriptId) {
     case 'chat-demo-padel':    return <ChatDemoScene    dark={dark} cta={cta ?? ''} sport="pádel"    hook="Sábado 10am?"/>
     case 'chat-demo-basquet':  return <ChatDemoScene    dark={dark} cta={cta ?? ''} sport="básquet"  hook="Cancha básquet jueves 20hs?"/>

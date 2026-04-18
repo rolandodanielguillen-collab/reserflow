@@ -39,6 +39,10 @@ export interface ContentPiece {
   hook: string
   slides?: DesignSlide[]
   script?: string
+  dbId?: string
+  dbStatus?: string
+  scheduledAt?: string | null
+  caption?: string | null
 }
 
 export type PieceStatus = 'borrador' | 'pendiente' | 'aprobado' | 'publicado'
