@@ -63,3 +63,16 @@ Thumbs.db
 # Supabase
 supabase/.branches
 supabase/.temp
+
+.vercel
+
+# Playwright logs y snapshots
+.playwright-mcp/
+
+# Screenshots de desarrollo
+*.png
+*.jpg
+nav-snapshot.md
+
+# Archivos temporales
+archivos/
