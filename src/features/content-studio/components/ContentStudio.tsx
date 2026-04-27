@@ -10,6 +10,7 @@ import { seedMayCalendar, resetAllToDraft } from '../services/seed-content-calen
 import { setCarouselStatus, scheduleCarouselAt } from '../services/set-carousel-status'
 import { publishCarouselNow, publishCarouselWithImages } from '../services/update-carousel-status'
 import { captureAndUploadSlides } from '../services/capture-slides'
+import { triggerPublishDuePosts } from '../services/trigger-publish'
 type RecordPhase = 'idle' | 'recording' | 'uploading'
 
 // ── Design tokens ─────────────────────────────────────────────────────────
@@ -735,11 +736,11 @@ function ArrowBtn({ side, dark, onClick, disabled }: { side: 'left' | 'right'; d
 }
 
 // ── Top Bar ───────────────────────────────────────────────────────────────
-function TopBar({ dark, toggleDark, view, setView, filter, setFilter, onReset, totalPieces }: {
+function TopBar({ dark, toggleDark, view, setView, filter, setFilter, onReset, onTriggerCron, totalPieces }: {
   dark: boolean; toggleDark: () => void
   view: 'calendar' | 'list'; setView: (v: 'calendar' | 'list') => void
   filter: string; setFilter: (f: string) => void
-  onReset: () => void; totalPieces: number
+  onReset: () => void; onTriggerCron: () => void; totalPieces: number
 }) {
   const bg      = dark ? T.navyDeep : T.cream
   const ink     = dark ? T.cream : T.navy
@@ -765,9 +766,14 @@ function TopBar({ dark, toggleDark, view, setView, filter, setFilter, onReset, t
       <div style={{ flex: 1 }}/>
 
       {totalPieces > 0 && (
-        <button onClick={onReset} style={{ all: 'unset', cursor: 'pointer', padding: '7px 12px', borderRadius: 8, background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(15,30,61,0.05)', color: inkSoft, fontFamily: FM, fontSize: 10, letterSpacing: '0.08em', border: `1px solid ${line}` }}>
-          ↺ Resetear a Borrador
-        </button>
+        <>
+          <button onClick={onTriggerCron} style={{ all: 'unset', cursor: 'pointer', padding: '7px 12px', borderRadius: 8, background: `${T.mint}22`, color: T.mint, fontFamily: FM, fontSize: 10, letterSpacing: '0.08em', border: `1px solid ${T.mint}55`, fontWeight: 700 }}>
+            ⚡ Publicar programados
+          </button>
+          <button onClick={onReset} style={{ all: 'unset', cursor: 'pointer', padding: '7px 12px', borderRadius: 8, background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(15,30,61,0.05)', color: inkSoft, fontFamily: FM, fontSize: 10, letterSpacing: '0.08em', border: `1px solid ${line}` }}>
+            ↺ Resetear a Borrador
+          </button>
+        </>
       )}
 
       <div style={{ display: 'flex', gap: 2, padding: 3, background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(15,30,61,0.06)', borderRadius: 9 }}>
@@ -897,6 +903,16 @@ export function ContentStudio() {
     setPieces(prev => prev.map(p => ({ ...p, dbStatus: 'draft' })))
   }
 
+  async function handleTriggerCron() {
+    const result = await triggerPublishDuePosts()
+    if (result.error) {
+      alert(`Sin posts para publicar: ${result.error}`)
+    } else {
+      alert(`✅ Publicados: ${result.processed}\n${result.results.map(r => `• ${r.status}: ${r.reason ?? r.postId ?? ''}`).join('\n')}`)
+      await loadPieces()
+    }
+  }
+
   function handleStatusChange(dbId: string, newDbStatus: string, scheduledAt?: string) {
     setPieces(prev => prev.map(p =>
       p.dbId === dbId
@@ -927,6 +943,7 @@ export function ContentStudio() {
         view={view} setView={setView}
         filter={filter} setFilter={setFilter}
         onReset={handleReset}
+        onTriggerCron={handleTriggerCron}
         totalPieces={pieces.length}
       />
 
