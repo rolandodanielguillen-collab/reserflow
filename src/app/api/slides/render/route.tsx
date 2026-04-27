@@ -3,20 +3,46 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const runtime = 'edge'
 
+export async function POST(req: NextRequest) {
+  try {
+    const data = await req.json()
+    return renderImage(data)
+  } catch (err) {
+    return NextResponse.json({ error: 'Render error' }, { status: 500 })
+  }
+}
+
 export async function GET(req: NextRequest) {
   const p = req.nextUrl.searchParams
+  const data = {
+    type: (p.get('type') ?? 'content') as 'cover' | 'content' | 'cta',
+    headline: p.get('headline') ?? '',
+    body: p.get('body') ?? '',
+    emoji: p.get('emoji') ?? '⚡',
+    index: parseInt(p.get('index') ?? '0'),
+    total: parseInt(p.get('total') ?? '1'),
+    brandName: p.get('brand') ?? 'RESER+',
+    primaryColor: p.get('primary') ?? '#1E40AF',
+    accentColor: p.get('accent') ?? '#10B981',
+    secondaryColor: p.get('secondary') ?? '#F59E0B',
+    coverImgUrl: p.get('coverImg') ?? '',
+  }
+  return renderImage(data)
+}
 
-  const type = (p.get('type') ?? 'content') as 'cover' | 'content' | 'cta'
-  const headline = p.get('headline') ?? ''
-  const body = p.get('body') ?? ''
-  const emoji = p.get('emoji') ?? '⚡'
-  const index = parseInt(p.get('index') ?? '0')
-  const total = parseInt(p.get('total') ?? '1')
-  const brandName = p.get('brand') ?? 'RESER+'
-  const primaryColor = p.get('primary') ?? '#1E40AF'
-  const accentColor = p.get('accent') ?? '#10B981'
-  const secondaryColor = p.get('secondary') ?? '#F59E0B'
-  const coverImgUrl = p.get('coverImg') ?? ''
+function renderImage(data: any) {
+  // Mapeo de campos del carrusel (big -> headline, sub -> body, kind -> type)
+  const headline = data.headline || data.big || ''
+  const body = data.body || data.sub || ''
+  const type = (data.type || data.kind || 'content') as 'cover' | 'content' | 'cta'
+  const emoji = data.emoji || '⚡'
+  const index = typeof data.index === 'number' ? data.index : 0
+  const total = typeof data.total === 'number' ? data.total : 1
+  const brandName = data.brandName || data.brand || 'RESER+'
+  const primaryColor = data.primaryColor || data.primary || '#1E40AF'
+  const accentColor = data.accentColor || data.accent || '#10B981'
+  const secondaryColor = data.secondaryColor || data.secondary || '#F59E0B'
+  const coverImgUrl = data.coverImgUrl || data.coverImg || ''
 
   const NAVY = '#0B1A2C'
   const NAVY2 = '#112340'

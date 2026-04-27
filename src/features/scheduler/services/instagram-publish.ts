@@ -1,12 +1,16 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient as createServerClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
+
 
 interface InstagramPublishParams {
   carouselId: string
   imageUrls: string[]
   caption: string
+  userId?: string
 }
+
 
 interface ReelsPublishParams {
   carouselId: string
@@ -16,14 +20,19 @@ interface ReelsPublishParams {
 
 export async function publishReelToInstagram({ carouselId, videoUrl, caption }: ReelsPublishParams) {
   const supabase = await createClient()
+  let userId: string | undefined
+
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
+  userId = user?.id
+
+  if (!userId) return { error: 'No autenticado' }
 
   const { data: brand } = await supabase
     .from('brand_settings')
     .select('meta_access_token, instagram_account_id')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .single()
+
 
   if (!brand?.meta_access_token || !brand?.instagram_account_id) {
     return { error: 'Configura el token de Meta y el ID de cuenta Instagram en Ajustes.' }
@@ -99,16 +108,32 @@ export async function publishReelToInstagram({ carouselId, videoUrl, caption }: 
  * - 1 imagen  → IMAGE post
  * - 2-10 imgs → CAROUSEL post
  */
-export async function publishToInstagram({ carouselId, imageUrls, caption }: InstagramPublishParams) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
+export async function publishToInstagram({ carouselId, imageUrls, caption, userId: passedUserId }: InstagramPublishParams) {
+  let supabase
+  let userId = passedUserId
+
+  if (passedUserId) {
+    // Modo sistema/cron: usar Service Role para saltar RLS
+    supabase = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+  } else {
+    // Modo cliente: usar sesión de usuario
+    supabase = await createServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    userId = user?.id
+  }
+
+  if (!userId) return { error: 'No autenticado' }
+
 
   const { data: brand } = await supabase
     .from('brand_settings')
     .select('meta_access_token, instagram_account_id')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .single()
+
 
   if (!brand?.meta_access_token || !brand?.instagram_account_id) {
     return { error: 'Configura el token de Meta y el ID de cuenta Instagram en Ajustes.' }
@@ -176,7 +201,8 @@ export async function publishToInstagram({ carouselId, imageUrls, caption }: Ins
         status:              'published',
       })
       .eq('id', carouselId)
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
+
 
     return { success: true, postId: pubJson.id, permalink }
 
@@ -186,7 +212,8 @@ export async function publishToInstagram({ carouselId, imageUrls, caption }: Ins
       .from('carousels')
       .update({ status: 'failed' })
       .eq('id', carouselId)
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
+
     return { error: message }
   }
 }

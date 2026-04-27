@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
     carouselId,
     imageUrls: uploadResult.urls,
     caption: carousel.title,
+    userId: carousel.user_id,
   })
 
   if ('error' in publishResult && publishResult.error) {

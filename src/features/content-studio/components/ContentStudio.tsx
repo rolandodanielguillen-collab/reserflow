@@ -7,7 +7,7 @@ import type { ContentPiece, DesignSlide } from '../types'
 import { ScaledSlide, VideoPreview } from './SlideCanvas'
 import { getCarousels } from '../services/get-carousels'
 import { seedMayCalendar, resetAllToDraft } from '../services/seed-content-calendar'
-import { setCarouselStatus, scheduleCarouselAt } from '../services/set-carousel-status'
+import { setCarouselStatus } from '../services/set-carousel-status'
 import { publishCarouselNow, publishCarouselWithImages } from '../services/update-carousel-status'
 import { captureAndUploadSlides } from '../services/capture-slides'
 import { triggerPublishDuePosts } from '../services/trigger-publish'
@@ -443,10 +443,23 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
   function handleSchedule() {
     if (!schedInput) return
     const date = new Date(schedInput)
-    run(
-      () => scheduleCarouselAt(piece.dbId, date),
-      () => { onStatusChange(piece.dbId, 'scheduled', date.toISOString()); setShowScheduler(false) }
-    )
+    startTransition(async () => {
+      setFeedback(null)
+      const res = await fetch('/api/carousel/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ carouselId: piece.dbId, scheduledAt: date.toISOString() }),
+      })
+      const json = await res.json() as { success?: boolean; error?: string }
+      if (json.error) {
+        setFeedback({ type: 'err', msg: json.error })
+      } else {
+        setFeedback({ type: 'ok', msg: 'Programado ✓' })
+        onStatusChange(piece.dbId, 'scheduled', date.toISOString())
+        setShowScheduler(false)
+        setTimeout(() => setFeedback(null), 3000)
+      }
+    })
   }
 
 
