@@ -19,7 +19,7 @@ interface ReelsPublishParams {
 }
 
 export async function publishReelToInstagram({ carouselId, videoUrl, caption }: ReelsPublishParams) {
-  const supabase = await createClient()
+  const supabase = await createServerClient()
   let userId: string | undefined
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -88,7 +88,7 @@ export async function publishReelToInstagram({ carouselId, videoUrl, caption }: 
         status:              'published',
       })
       .eq('id', carouselId)
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
 
     return { success: true, postId: pubJson.id, permalink }
 
@@ -98,7 +98,7 @@ export async function publishReelToInstagram({ carouselId, videoUrl, caption }: 
       .from('carousels')
       .update({ status: 'failed' })
       .eq('id', carouselId)
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
     return { error: message }
   }
 }
