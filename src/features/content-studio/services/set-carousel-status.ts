@@ -84,12 +84,14 @@ export async function scheduleCarouselAt(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('carousels')
     .update({ status: 'scheduled', scheduled_at: scheduledAt.toISOString() })
     .eq('id', carouselId)
     .eq('user_id', user.id)
+    .select('id')
 
   if (error) return { error: error.message }
+  if (!updated || updated.length === 0) return { error: `Carrusel no encontrado (id: ${carouselId}, user: ${user.id})` }
   return { success: true }
 }
