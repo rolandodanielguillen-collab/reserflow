@@ -29,12 +29,20 @@ const FM = `'JetBrains Mono', ui-monospace, SFMono-Regular, monospace`
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 const DAYS_ES   = ['LU','MA','MI','JU','VI','SÁ','DO']
 
-// Convierte un ISO UTC a string "YYYY-MM-DDTHH:mm" en hora LOCAL del browser
-// (necesario para el atributo value de datetime-local, que opera en hora local)
+const ARG_TZ = 'America/Argentina/Buenos_Aires'
+
+// Convierte un ISO UTC a "YYYY-MM-DDTHH:mm" en hora Argentina (no depende del TZ del browser)
 function utcISOToLocalInput(utcIso: string): string {
   const d = new Date(utcIso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  // sv-SE locale devuelve "YYYY-MM-DD HH:MM:SS"
+  const s = d.toLocaleString('sv-SE', { timeZone: ARG_TZ })
+  return s.slice(0, 16).replace(' ', 'T')
+}
+
+// Convierte el valor de un input datetime-local (que el usuario ve como hora Argentina)
+// a un Date UTC correcto, independientemente del TZ del browser
+function argInputToDate(localInput: string): Date {
+  return new Date(`${localInput}:00-03:00`)
 }
 
 // ── Status system ─────────────────────────────────────────────────────────
@@ -338,7 +346,7 @@ function PieceCard({ piece, dark, onClick, compact }: { piece: RichPiece; dark: 
     ? { ink: T.cream, inkSoft: 'rgba(245,242,235,0.6)' }
     : { ink: T.navy, inkSoft: 'rgba(15,30,61,0.6)' }
   const dateStr = piece.scheduledAt
-    ? new Date(piece.scheduledAt).toLocaleString('es-AR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    ? new Date(piece.scheduledAt).toLocaleString('es-AR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: ARG_TZ })
     : null
   return (
     <div
@@ -367,8 +375,13 @@ function PieceCard({ piece, dark, onClick, compact }: { piece: RichPiece; dark: 
         <div style={{ fontFamily: FD, fontWeight: 700, fontSize: compact ? 14 : 16, lineHeight: 1.2, letterSpacing: '-0.02em', color: th.ink, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>
           {piece.hook}
         </div>
-        <div style={{ fontFamily: FM, fontSize: 9, color: th.inkSoft, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          {typeLabel}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ fontFamily: FM, fontSize: 9, color: th.inkSoft, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            {typeLabel}
+          </div>
+          <div style={{ fontFamily: FM, fontSize: 9, color: th.inkSoft, opacity: 0.5, letterSpacing: '0.06em' }}>
+            #{piece.dbId.slice(0, 8)}
+          </div>
         </div>
       </div>
     </div>
@@ -444,7 +457,7 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
 
   function handleSchedule() {
     if (!schedInput) return
-    const date = new Date(schedInput)
+    const date = argInputToDate(schedInput)
     startTransition(async () => {
       setFeedback(null)
       const res = await fetch('/api/carousel/schedule', {
@@ -539,12 +552,17 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
               </div>
               <button onClick={onClose} style={{ all: 'unset', cursor: 'pointer', width: 28, height: 28, borderRadius: 14, background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(15,30,61,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>×</button>
             </div>
-            <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 18, lineHeight: 1.25, letterSpacing: '-0.02em', marginBottom: 6 }}>
-              {piece.hook}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+              <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 18, lineHeight: 1.25, letterSpacing: '-0.02em' }}>
+                {piece.hook}
+              </div>
+              <span style={{ fontFamily: FM, fontSize: 9, color: inkSoft, opacity: 0.55, letterSpacing: '0.06em', flexShrink: 0 }}>
+                #{piece.dbId.slice(0, 8)}
+              </span>
             </div>
             {piece.scheduledAt ? (
               <div style={{ fontFamily: FM, fontSize: 10, color: '#6B9FFF', letterSpacing: '0.06em' }}>
-                📅 {new Date(piece.scheduledAt).toLocaleString('es-AR', { dateStyle: 'long', timeStyle: 'short' })}
+                📅 {new Date(piece.scheduledAt).toLocaleString('es-AR', { dateStyle: 'long', timeStyle: 'short', timeZone: ARG_TZ })}
               </div>
             ) : (
               <div style={{ fontFamily: FM, fontSize: 10, color: T.amber, letterSpacing: '0.06em' }}>
@@ -606,7 +624,7 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
                 <span>📅</span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                   {piece.scheduledAt
-                    ? new Date(piece.scheduledAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })
+                    ? new Date(piece.scheduledAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short', timeZone: ARG_TZ })
                     : 'Elegir fecha y hora'}
                 </span>
               </button>
@@ -618,6 +636,9 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
                   onChange={e => setSchedInput(e.target.value)}
                   style={{ padding: '9px 11px', borderRadius: 8, border: `1.5px solid ${divLine}`, background: dark ? T.navyDeep : '#fff', color: ink, fontFamily: FM, fontSize: 12, outline: 'none', width: '100%', boxSizing: 'border-box' as const }}
                 />
+                <div style={{ fontFamily: FM, fontSize: 9, color: T.mint, opacity: 0.75, letterSpacing: '0.08em' }}>
+                  hora Argentina (UTC-3)
+                </div>
                 <div style={{ display: 'flex', gap: 7 }}>
                   <button disabled={isPending || !schedInput} onClick={handleSchedule} style={{ all: 'unset', flex: 1, cursor: schedInput ? 'pointer' : 'default', padding: '10px 0', borderRadius: 9, background: T.mint, color: T.navy, fontFamily: FD, fontWeight: 700, fontSize: 13, textAlign: 'center' as const, opacity: isPending ? 0.6 : 1 }}>
                     Confirmar

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  eachDayOfInterval, isSameMonth, isToday, isSameDay, addMonths, subMonths
+  eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths
 } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { getScheduledCarousels, cancelScheduledPost } from '../services/schedule-post'
@@ -15,6 +15,13 @@ interface ScheduledItem {
   scheduled_at: string | null
   published_at: string | null
   instagram_permalink: string | null
+}
+
+const ARG_TZ = 'America/Argentina/Buenos_Aires'
+
+function argDateStr(d: Date | string): string {
+  const date = typeof d === 'string' ? new Date(d) : d
+  return date.toLocaleDateString('sv-SE', { timeZone: ARG_TZ }) // "YYYY-MM-DD"
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -62,7 +69,8 @@ export function ContentCalendar() {
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd })
 
   function getPostsForDay(day: Date) {
-    return posts.filter(p => p.scheduled_at && isSameDay(new Date(p.scheduled_at), day))
+    const dayStr = argDateStr(day)
+    return posts.filter(p => p.scheduled_at && argDateStr(p.scheduled_at) === dayStr)
   }
 
   const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
@@ -158,10 +166,13 @@ export function ContentCalendar() {
         <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm">{selected.title}</h3>
+              <div className="flex items-baseline gap-2">
+                <h3 className="font-semibold text-gray-900 text-sm">{selected.title}</h3>
+                <span className="text-[10px] text-gray-400 font-mono">#{selected.id.slice(0, 8)}</span>
+              </div>
               {selected.scheduled_at && (
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {format(new Date(selected.scheduled_at), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
+                  {new Date(selected.scheduled_at).toLocaleString('es-AR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: ARG_TZ })} hs
                 </p>
               )}
             </div>

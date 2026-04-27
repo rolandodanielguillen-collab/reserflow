@@ -18,11 +18,13 @@ interface CarouselPreviewProps {
 type ViewMode = 'animated' | 'grid'
 type ActionState = 'idle' | 'scheduling' | 'scheduled' | 'publishing' | 'published' | 'error'
 
-// Devuelve "YYYY-MM-DDTHH:mm" en hora LOCAL del browser para usar en min/value de datetime-local
+const ARG_TZ = 'America/Argentina/Buenos_Aires'
+
+// Devuelve "YYYY-MM-DDTHH:mm" en hora Argentina para usar en min/value de datetime-local
 function localNowInput(): string {
   const d = new Date()
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  const s = d.toLocaleString('sv-SE', { timeZone: ARG_TZ })
+  return s.slice(0, 16).replace(' ', 'T')
 }
 
 export function CarouselPreview({ carousel, carouselId, brand, coverImageUrl, topic }: CarouselPreviewProps) {
@@ -36,7 +38,7 @@ export function CarouselPreview({ carousel, carouselId, brand, coverImageUrl, to
     if (!scheduledAt) return
     setActionState('scheduling')
     setActionError('')
-    const result = await schedulePost(carouselId, new Date(scheduledAt))
+    const result = await schedulePost(carouselId, new Date(`${scheduledAt}:00-03:00`))
     if (result.error) { setActionError(result.error); setActionState('error') }
     else setActionState('scheduled')
   }
