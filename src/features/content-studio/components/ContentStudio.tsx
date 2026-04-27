@@ -38,13 +38,14 @@ function utcISOToLocalInput(utcIso: string): string {
 }
 
 // ── Status system ─────────────────────────────────────────────────────────
-type UIStatus = 'borrador' | 'pendiente' | 'aprobado' | 'programado' | 'publicado'
+type UIStatus = 'borrador' | 'pendiente' | 'aprobado' | 'programado' | 'publicado' | 'fallido'
 
 function dbToUI(s: string): UIStatus {
   if (s === 'published')  return 'publicado'
   if (s === 'approved')   return 'aprobado'
   if (s === 'scheduled')  return 'programado'
   if (s === 'review')     return 'pendiente'
+  if (s === 'failed')     return 'fallido'
   return 'borrador'
 }
 
@@ -62,6 +63,7 @@ const STATUS_META: Record<UIStatus, { color: string; label: string }> = {
   aprobado:  { color: T.mint,      label: 'Aprobado'   },
   programado:{ color: '#6B9FFF',   label: 'Programado' },
   publicado: { color: T.navy,      label: 'Publicado'  },
+  fallido:   { color: '#E05252',   label: 'Fallido'    },
 }
 
 type AISlide = { type: 'cover' | 'content' | 'cta'; headline: string; body: string }
@@ -119,7 +121,7 @@ function HeadlineStrip({ pieces, dark }: { pieces: RichPiece[]; dark: boolean })
     ? { panel: T.navySoft, ink: T.cream, inkSoft: 'rgba(245,242,235,0.65)', line: 'rgba(245,242,235,0.08)' }
     : { panel: '#fff', ink: T.navy, inkSoft: 'rgba(15,30,61,0.65)', line: 'rgba(15,30,61,0.08)' }
 
-  const counts = { total: pieces.length, publicado: 0, aprobado: 0, programado: 0, pendiente: 0, borrador: 0 }
+  const counts = { total: pieces.length, publicado: 0, aprobado: 0, programado: 0, pendiente: 0, borrador: 0, fallido: 0 }
   pieces.forEach(p => { counts[dbToUI(p.dbStatus)]++ })
 
   const stats = [
@@ -851,6 +853,7 @@ export function ContentStudio() {
   const [pieces, setPieces]             = useState<RichPiece[]>([])
   const [seeding, setSeeding]           = useState(false)
   const [loading, setLoading]           = useState(true)
+  const autoTriggeredRef                = useRef(false)
 
   // Calendar navigation: start at May 2026
   const [calYear, setCalYear]   = useState(2026)
@@ -897,6 +900,22 @@ export function ContentStudio() {
     if (savedDark !== null) setDark(savedDark !== 'false')
     loadPieces()
   }, [])
+
+  // Auto-publicar posts vencidos al cargar el Content Studio
+  useEffect(() => {
+    if (loading || pieces.length === 0 || autoTriggeredRef.current) return
+    const now = new Date()
+    const hasDue = pieces.some(p =>
+      p.dbStatus === 'scheduled' &&
+      p.scheduledAt &&
+      new Date(p.scheduledAt) <= now
+    )
+    if (!hasDue) return
+    autoTriggeredRef.current = true
+    triggerPublishDuePosts()
+      .then(result => { if (result.processed > 0) loadPieces() })
+      .catch(() => {})
+  }, [loading, pieces])
 
   const toggleDark = useCallback(() => {
     setDark(d => { const next = !d; localStorage.setItem('reser-cs-dark', String(next)); return next })

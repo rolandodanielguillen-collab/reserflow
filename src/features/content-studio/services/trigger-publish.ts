@@ -40,6 +40,12 @@ export async function triggerPublishDuePosts(): Promise<{
     try {
       await admin.from('carousels').update({ status: 'processing' }).eq('id', post.id)
 
+      if (!post.slides_json) {
+        await admin.from('carousels').update({ status: 'failed' }).eq('id', post.id)
+        results.push({ id: post.id, status: 'failed', reason: 'slides_json vacío' })
+        continue
+      }
+
       const slides = post.slides_json as SlideOutput[]
       const uploadResult = await uploadSlidesToCloudinary(post.id, slides)
 

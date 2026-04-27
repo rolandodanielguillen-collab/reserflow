@@ -43,6 +43,11 @@ export async function GET(request: Request) {
       try {
         await supabase.from('carousels').update({ status: 'processing' }).eq('id', post.id)
 
+        if (!post.slides_json) {
+          await supabase.from('carousels').update({ status: 'failed' }).eq('id', post.id)
+          return { id: post.id, status: 'failed', reason: 'slides_json vacío' }
+        }
+
         const slides = post.slides_json as SlideOutput[]
         const uploadResult = await uploadSlidesToCloudinary(post.id, slides)
 
