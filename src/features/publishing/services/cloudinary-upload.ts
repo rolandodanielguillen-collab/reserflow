@@ -9,17 +9,19 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 })
 
-async function renderSlide(slide: SlideOutput, total: number): Promise<Buffer> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+async function renderSlide(slide: SlideOutput, index: number, total: number): Promise<Buffer> {
+  const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+  const baseUrl = vercelUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const res = await fetch(`${baseUrl}/api/slides/render`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...slide, total }),
+    body: JSON.stringify({ ...slide, index, total }),
   })
-  if (!res.ok) throw new Error(`Error renderizando slide ${slide.index}: ${res.statusText}`)
+  if (!res.ok) throw new Error(`Error renderizando slide ${index}: ${res.statusText}`)
   const arrayBuffer = await res.arrayBuffer()
   return Buffer.from(arrayBuffer)
 }
+
 
 export async function uploadSlidesToCloudinary(
   carouselId: string,
@@ -28,8 +30,10 @@ export async function uploadSlidesToCloudinary(
   try {
     const urls: string[] = []
 
-    for (const slide of slides) {
-      const buffer = await renderSlide(slide, slides.length)
+    for (let i = 0; i < slides.length; i++) {
+      const slide = slides[i]
+      const buffer = await renderSlide(slide, i, slides.length)
+
 
       const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
         cloudinary.uploader.upload_stream(
