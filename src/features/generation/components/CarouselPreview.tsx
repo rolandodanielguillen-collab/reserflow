@@ -18,6 +18,13 @@ interface CarouselPreviewProps {
 type ViewMode = 'animated' | 'grid'
 type ActionState = 'idle' | 'scheduling' | 'scheduled' | 'publishing' | 'published' | 'error'
 
+// Devuelve "YYYY-MM-DDTHH:mm" en hora LOCAL del browser para usar en min/value de datetime-local
+function localNowInput(): string {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 export function CarouselPreview({ carousel, carouselId, brand, coverImageUrl, topic }: CarouselPreviewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('animated')
   const [scheduledAt, setScheduledAt] = useState('')
@@ -188,7 +195,7 @@ export function CarouselPreview({ carousel, carouselId, brand, coverImageUrl, to
                   type="datetime-local"
                   value={scheduledAt}
                   onChange={e => setScheduledAt(e.target.value)}
-                  min={new Date().toISOString().slice(0, 16)}
+                  min={localNowInput()}
                   className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1"
                   style={{ ['--tw-ring-color' as string]: brand.primaryColor }}
                 />

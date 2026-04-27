@@ -28,6 +28,14 @@ const FM = `'JetBrains Mono', ui-monospace, SFMono-Regular, monospace`
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 const DAYS_ES   = ['LU','MA','MI','JU','VI','SÁ','DO']
 
+// Convierte un ISO UTC a string "YYYY-MM-DDTHH:mm" en hora LOCAL del browser
+// (necesario para el atributo value de datetime-local, que opera en hora local)
+function utcISOToLocalInput(utcIso: string): string {
+  const d = new Date(utcIso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 // ── Status system ─────────────────────────────────────────────────────────
 type UIStatus = 'borrador' | 'pendiente' | 'aprobado' | 'programado' | 'publicado'
 
@@ -378,7 +386,7 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
   const [recordPct, setRecordPct] = useState(0)
   const [showScheduler, setShowScheduler] = useState(false)
   const [schedInput, setSchedInput] = useState(
-    piece.scheduledAt ? piece.scheduledAt.slice(0, 16) : ''
+    piece.scheduledAt ? utcISOToLocalInput(piece.scheduledAt) : ''
   )
   const [feedback, setFeedback] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null)
   const slideContainerRef = useRef<HTMLDivElement>(null)
