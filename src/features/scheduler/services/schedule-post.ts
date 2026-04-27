@@ -1,13 +1,18 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 
 export async function schedulePost(carouselId: string, scheduledAt: Date) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
-  const { data: updated, error } = await supabase
+  const admin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const { data: updated, error } = await admin
     .from('carousels')
     .update({ scheduled_at: scheduledAt.toISOString(), status: 'scheduled' })
     .eq('id', carouselId)

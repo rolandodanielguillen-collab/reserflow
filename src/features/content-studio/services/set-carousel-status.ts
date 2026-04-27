@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 
 export type DBStatus = 'draft' | 'review' | 'approved' | 'scheduled' | 'published'
 
@@ -84,7 +85,12 @@ export async function scheduleCarouselAt(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
-  const { data: updated, error } = await supabase
+  // Usar service role para evitar problemas de RLS en server actions de Vercel
+  const admin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const { data: updated, error } = await admin
     .from('carousels')
     .update({ status: 'scheduled', scheduled_at: scheduledAt.toISOString() })
     .eq('id', carouselId)
