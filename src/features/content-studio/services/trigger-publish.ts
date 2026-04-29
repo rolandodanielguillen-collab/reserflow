@@ -23,7 +23,7 @@ export async function triggerPublishDuePosts(): Promise<{
   const now = new Date().toISOString()
   const { data: duePosts, error } = await admin
     .from('carousels')
-    .select('id, user_id, title, caption, slides_json')
+    .select('id, user_id, title, caption, slides_json, retry_count')
     .eq('status', 'scheduled')
     .eq('user_id', user.id)
     .lte('scheduled_at', now)
@@ -38,11 +38,12 @@ export async function triggerPublishDuePosts(): Promise<{
 
   for (const post of duePosts) {
     try {
-      await admin.from('carousels').update({ status: 'processing' }).eq('id', post.id)
+      await admin.from('carousels').update({ status: 'processing', fail_reason: null }).eq('id', post.id)
 
-      if (!post.slides_json) {
-        await admin.from('carousels').update({ status: 'failed' }).eq('id', post.id)
-        results.push({ id: post.id, status: 'failed', reason: 'slides_json vacío' })
+      if (!post.slides_json || (Array.isArray(post.slides_json) && post.slides_json.length === 0)) {
+        const reason = 'slides_json vacío o sin slides'
+        await admin.from('carousels').update({ status: 'failed', fail_reason: reason }).eq('id', post.id)
+        results.push({ id: post.id, status: 'failed', reason })
         continue
       }
 
@@ -50,8 +51,9 @@ export async function triggerPublishDuePosts(): Promise<{
       const uploadResult = await uploadSlidesToCloudinary(post.id, slides)
 
       if ('error' in uploadResult) {
-        await admin.from('carousels').update({ status: 'failed' }).eq('id', post.id)
-        results.push({ id: post.id, status: 'failed', reason: uploadResult.error })
+        const reason = `Cloudinary: ${uploadResult.error}`
+        await admin.from('carousels').update({ status: 'failed', fail_reason: reason }).eq('id', post.id)
+        results.push({ id: post.id, status: 'failed', reason })
         continue
       }
 
@@ -63,13 +65,15 @@ export async function triggerPublishDuePosts(): Promise<{
       })
 
       if (publishResult.error) {
-        results.push({ id: post.id, status: 'failed', reason: publishResult.error })
+        const reason = `Instagram: ${publishResult.error}`
+        await admin.from('carousels').update({ status: 'failed', fail_reason: reason }).eq('id', post.id)
+        results.push({ id: post.id, status: 'failed', reason })
       } else {
         results.push({ id: post.id, status: 'published', postId: publishResult.postId })
       }
     } catch (err) {
       const reason = err instanceof Error ? err.message : 'Error desconocido'
-      await admin.from('carousels').update({ status: 'failed' }).eq('id', post.id)
+      await admin.from('carousels').update({ status: 'failed', fail_reason: reason }).eq('id', post.id)
       results.push({ id: post.id, status: 'failed', reason })
     }
   }
