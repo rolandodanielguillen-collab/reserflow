@@ -10,8 +10,9 @@ cloudinary.config({
 })
 
 async function renderSlide(slide: SlideOutput, index: number, total: number): Promise<Buffer> {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
   const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
-  const baseUrl = vercelUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  const baseUrl = siteUrl ?? vercelUrl ?? 'http://localhost:3000'
   const res = await fetch(`${baseUrl}/api/slides/render`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
