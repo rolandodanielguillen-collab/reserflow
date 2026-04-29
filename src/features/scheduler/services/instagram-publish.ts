@@ -185,6 +185,26 @@ export async function publishToInstagram({ carouselId, imageUrls, caption, userI
       creationId = json.id
     }
 
+    // ── Wait for container to be ready ──────────────────────────────────
+    const checkStatus = async (containerId: string) => {
+      const r = await fetch(`${BASE}/${containerId}?fields=status_code,status&access_token=${token}`)
+      return r.json() as Promise<{ status_code?: string; status?: string }>
+    }
+
+    let containerStatus = await checkStatus(creationId)
+    let pollAttempts = 0
+    while (containerStatus.status_code !== 'FINISHED' && pollAttempts < 30) {
+      if (containerStatus.status_code === 'ERROR') {
+        throw new Error(`Instagram container error: ${containerStatus.status ?? 'unknown'}`)
+      }
+      await new Promise(r => setTimeout(r, 2_000))
+      containerStatus = await checkStatus(creationId)
+      pollAttempts++
+    }
+    if (containerStatus.status_code !== 'FINISHED') {
+      throw new Error(`Instagram container no listo después de 60s (status: ${containerStatus.status_code})`)
+    }
+
     // ── Publish ──────────────────────────────────────────────────────────
     const pubParams = new URLSearchParams({ creation_id: creationId, access_token: token })
     const pubRes    = await fetch(`${BASE}/${igId}/media_publish`, { method: 'POST', body: pubParams })
