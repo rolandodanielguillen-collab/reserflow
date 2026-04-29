@@ -7,8 +7,8 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
-  const body = await request.json() as { carouselId?: string; scheduledAt?: string }
-  const { carouselId, scheduledAt } = body
+  const body = await request.json() as { carouselId?: string; scheduledAt?: string; slideImageUrls?: string[] }
+  const { carouselId, scheduledAt, slideImageUrls } = body
 
   if (!carouselId || !scheduledAt) {
     return NextResponse.json({ error: 'Faltan parámetros: carouselId y scheduledAt' }, { status: 400 })
@@ -26,7 +26,13 @@ export async function POST(request: Request) {
 
   const { data: updated, error } = await admin
     .from('carousels')
-    .update({ status: 'scheduled', scheduled_at: scheduledDate.toISOString() })
+    .update({
+      status: 'scheduled',
+      scheduled_at: scheduledDate.toISOString(),
+      slide_image_urls: slideImageUrls?.length ? slideImageUrls : [],
+      fail_reason: null,
+      retry_count: 0,
+    })
     .eq('id', carouselId)
     .eq('user_id', user.id)
     .select('id')

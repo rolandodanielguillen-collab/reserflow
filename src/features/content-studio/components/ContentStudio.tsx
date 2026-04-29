@@ -460,10 +460,27 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
     const date = argInputToDate(schedInput)
     startTransition(async () => {
       setFeedback(null)
+      setFeedback({ type: 'ok', msg: 'Capturando slides...' })
+
+      let slideImageUrls: string[] = []
+      if (piece.slides?.length && slideContainerRef.current) {
+        try {
+          const { createClient } = await import('@/lib/supabase/client')
+          const supabase = createClient()
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            const slideEls = slideContainerRef.current.querySelectorAll<HTMLElement>('[data-slide-capture]')
+            slideImageUrls = await captureAndUploadSlides(Array.from(slideEls), piece.dbId, user.id)
+          }
+        } catch {
+          // Fall back to server rendering if capture fails
+        }
+      }
+
       const res = await fetch('/api/carousel/schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ carouselId: piece.dbId, scheduledAt: date.toISOString() }),
+        body: JSON.stringify({ carouselId: piece.dbId, scheduledAt: date.toISOString(), slideImageUrls }),
       })
       const json = await res.json() as { success?: boolean; error?: string }
       if (json.error) {
