@@ -469,26 +469,7 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
       let slideImageUrls: string[] = []
       let videoUrl: string | undefined
 
-      if (isVideo) {
-        setFeedback({ type: 'ok', msg: 'Renderizando video... (puede tardar ~60s)' })
-        try {
-          const res = await fetch('/api/render-reel', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ scriptId: piece.script, dark, cta: '', carouselId: piece.dbId }),
-          })
-          const ct = res.headers.get('content-type') ?? ''
-          if (!ct.includes('application/json')) throw new Error('render no disponible')
-          const result = await res.json() as { url?: string; error?: string }
-          if (!result.url) throw new Error(result.error ?? 'Error renderizando video')
-          videoUrl = result.url
-        } catch {
-          // Video render no disponible en producción — programar con slides como carousel
-          setFeedback({ type: 'ok', msg: 'Programando con slides (video render no disponible en prod)...' })
-        }
-      }
-
-      if (!videoUrl && piece.slides?.length) {
+      if (piece.slides?.length) {
         setFeedback({ type: 'ok', msg: 'Capturando slides...' })
         if (slideContainerRef.current) {
           try {
@@ -506,6 +487,27 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
         }
         if (slideImageUrls.length === 0) {
           setFeedback({ type: 'err', msg: 'No se pudieron capturar las imágenes de los slides. Intentá de nuevo.' })
+          return
+        }
+      }
+
+      if (isVideo && slideImageUrls.length > 0) {
+        setFeedback({ type: 'ok', msg: 'Generando video con Cloudinary... (puede tardar ~60s)' })
+        try {
+          const res = await fetch('/api/video-slideshow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ carouselId: piece.dbId, slideImageUrls }),
+          })
+          const result = await res.json() as { videoUrl?: string; error?: string }
+          if (result.videoUrl) {
+            videoUrl = result.videoUrl
+          } else {
+            setFeedback({ type: 'err', msg: result.error ?? 'Error generando video' })
+            return
+          }
+        } catch {
+          setFeedback({ type: 'err', msg: 'Error generando video. Intentá de nuevo.' })
           return
         }
       }
