@@ -543,7 +543,7 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
         {/* Preview */}
         <div ref={slideContainerRef} style={{ background: dark ? '#05080F' : '#EAE5D8', padding: 40, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
           {/* Hidden full-size slides for capture */}
-          {piece.type === 'carousel' && piece.slides && (
+          {piece.slides && piece.slides.length > 0 && (
             <div style={{ position: 'absolute', left: -9999, top: -9999, pointerEvents: 'none', display: 'flex', flexDirection: 'column' }}>
               {piece.slides.map((s, i) => (
                 <div key={i} data-slide-capture="true" style={{ width: 1080, height: 1350, flexShrink: 0 }}>
