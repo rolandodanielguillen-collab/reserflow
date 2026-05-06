@@ -457,36 +457,66 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
 
   function handleSchedule() {
     if (!schedInput) return
+    const isVideo = piece.type === 'video' && !!piece.script
+    if (!isVideo && !piece.slides?.length) {
+      setFeedback({ type: 'err', msg: 'Este carrusel no tiene slides. Editalo antes de programar.' })
+      return
+    }
     const date = argInputToDate(schedInput)
     startTransition(async () => {
       setFeedback(null)
-      setFeedback({ type: 'ok', msg: 'Capturando slides...' })
 
       let slideImageUrls: string[] = []
-      if (piece.slides?.length && slideContainerRef.current) {
+      let videoUrl: string | undefined
+
+      if (isVideo) {
+        setFeedback({ type: 'ok', msg: 'Renderizando video... (puede tardar ~60s)' })
         try {
-          const { createClient } = await import('@/lib/supabase/client')
-          const supabase = createClient()
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user) {
-            const slideEls = slideContainerRef.current.querySelectorAll<HTMLElement>('[data-slide-capture]')
-            slideImageUrls = await captureAndUploadSlides(Array.from(slideEls), piece.dbId, user.id)
+          const res = await fetch('/api/render-reel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scriptId: piece.script, dark, cta: '', carouselId: piece.dbId }),
+          })
+          const result = await res.json() as { url?: string; error?: string }
+          if (!result.url) throw new Error(result.error ?? 'Error renderizando video')
+          videoUrl = result.url
+        } catch (err) {
+          setFeedback({ type: 'err', msg: err instanceof Error ? err.message : 'Error renderizando video. Intentá de nuevo.' })
+          return
+        }
+      } else {
+        setFeedback({ type: 'ok', msg: 'Capturando slides...' })
+        if (piece.slides?.length && slideContainerRef.current) {
+          try {
+            const { createClient } = await import('@/lib/supabase/client')
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+              const slideEls = slideContainerRef.current.querySelectorAll<HTMLElement>('[data-slide-capture]')
+              slideImageUrls = await captureAndUploadSlides(Array.from(slideEls), piece.dbId, user.id)
+            }
+          } catch {
+            setFeedback({ type: 'err', msg: 'Error capturando slides. Intentá de nuevo.' })
+            return
           }
-        } catch {
-          // Fall back to server rendering if capture fails
+        }
+        if (piece.slides?.length && slideImageUrls.length === 0) {
+          setFeedback({ type: 'err', msg: 'No se pudieron capturar las imágenes de los slides. Intentá de nuevo.' })
+          return
         }
       }
 
+      setFeedback({ type: 'ok', msg: 'Programando...' })
       const res = await fetch('/api/carousel/schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ carouselId: piece.dbId, scheduledAt: date.toISOString(), slideImageUrls }),
+        body: JSON.stringify({ carouselId: piece.dbId, scheduledAt: date.toISOString(), slideImageUrls, videoUrl }),
       })
       const json = await res.json() as { success?: boolean; error?: string }
       if (json.error) {
         setFeedback({ type: 'err', msg: json.error })
       } else {
-        setFeedback({ type: 'ok', msg: 'Programado ✓' })
+        setFeedback({ type: 'ok', msg: isVideo ? 'Video programado ✓' : 'Programado ✓' })
         onStatusChange(piece.dbId, 'scheduled', date.toISOString())
         setShowScheduler(false)
         setTimeout(() => setFeedback(null), 3000)

@@ -7,8 +7,8 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
-  const body = await request.json() as { carouselId?: string; scheduledAt?: string; slideImageUrls?: string[] }
-  const { carouselId, scheduledAt, slideImageUrls } = body
+  const body = await request.json() as { carouselId?: string; scheduledAt?: string; slideImageUrls?: string[]; videoUrl?: string }
+  const { carouselId, scheduledAt, slideImageUrls, videoUrl } = body
 
   if (!carouselId || !scheduledAt) {
     return NextResponse.json({ error: 'Faltan parámetros: carouselId y scheduledAt' }, { status: 400 })
@@ -24,12 +24,33 @@ export async function POST(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  const hasImages = slideImageUrls && slideImageUrls.length > 0
+  const hasVideo = !!videoUrl
+
+  if (!hasImages && !hasVideo) {
+    const { data: existing } = await admin
+      .from('carousels')
+      .select('slides_json')
+      .eq('id', carouselId)
+      .eq('user_id', user.id)
+      .single()
+
+    const slides = existing?.slides_json as unknown[] | null
+    if (!slides || slides.length === 0) {
+      return NextResponse.json(
+        { error: 'No se puede programar: el carrusel no tiene slides ni imágenes capturadas. Editá el carrusel primero.' },
+        { status: 400 }
+      )
+    }
+  }
+
   const { data: updated, error } = await admin
     .from('carousels')
     .update({
       status: 'scheduled',
       scheduled_at: scheduledDate.toISOString(),
-      slide_image_urls: slideImageUrls?.length ? slideImageUrls : [],
+      slide_image_urls: hasImages ? slideImageUrls : [],
+      video_url: hasVideo ? videoUrl : null,
       fail_reason: null,
       retry_count: 0,
     })

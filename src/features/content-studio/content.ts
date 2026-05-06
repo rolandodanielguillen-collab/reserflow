@@ -19,6 +19,12 @@ export const CONTENT: ContentPiece[] = [
     audience: 'B2C', sport: 'padel',
     hook: '30 segundos. Una cancha.',
     script: 'chat-demo-padel',
+    slides: [
+      { kind: 'cover', eyebrow: 'PÁDEL', big: '30 segundos.\nUna cancha.', foot: 'desliza →' },
+      { kind: 'chat', msgs: [{ who: 'you', text: 'Quiero pádel sábado 18hs' }, { who: 'bot', text: '🏸 Cancha 2 disponible.\n¿Confirmo?' }, { who: 'you', text: 'Dale' }, { who: 'bot', text: 'Reservado ✅\nSábado 18:00 · Cancha 2' }] },
+      { kind: 'stat', top: '30s', big: 'de reserva\na cancha', bottom: 'Sin llamar. Sin esperar.' },
+      { kind: 'cta', big: 'Probalo.\nMandá un mensaje.', cta: 'Conocé más en el link' },
+    ],
   },
   {
     id: 3, day: 3, type: 'carousel', variant: 'beforeAfter', angle: 'compare',
@@ -47,6 +53,11 @@ export const CONTENT: ContentPiece[] = [
     audience: 'all', sport: 'mix',
     hook: 'El + que te faltaba',
     script: 'plus-bloom',
+    slides: [
+      { kind: 'cover', eyebrow: 'RESER+', big: 'El + que\nte faltaba.', foot: 'desliza →' },
+      { kind: 'plusGrid', items: [{ t: '+ Reservas', d: 'Por WhatsApp, sin apps' }, { t: '+ Pagos', d: 'Cobrás al reservar' }, { t: '+ Agenda', d: 'Todo en tiempo real' }, { t: '+ Avisos', d: 'Recordatorios automáticos' }] },
+      { kind: 'cta', big: 'Sumá el +\na tu club.', cta: 'Conocé más en el link' },
+    ],
   },
 
   // ─── Week 2: Problemas del club ──────────────────────────────────────
@@ -77,6 +88,12 @@ export const CONTENT: ContentPiece[] = [
     audience: 'B2C', sport: 'tenis',
     hook: 'Escribir. Reservar. Jugar.',
     script: 'typing-reveal',
+    slides: [
+      { kind: 'cover', eyebrow: 'TENIS', big: 'Escribir.\nReservar.\nJugar.', foot: 'desliza →' },
+      { kind: 'chat', msgs: [{ who: 'you', text: 'Quiero una cancha de tenis mañana 9am' }, { who: 'bot', text: '🎾 Cancha 1 disponible.\n¿Confirmo?' }, { who: 'you', text: 'Sí' }, { who: 'bot', text: 'Listo ✅ Mañana 9:00 · Cancha 1' }] },
+      { kind: 'stat', top: '3', big: 'mensajes\ny jugás', bottom: 'Así de rápido. Así de Reser+.' },
+      { kind: 'cta', big: 'Menos apps.\nMás tenis.', cta: 'Conocé más en el link' },
+    ],
   },
   {
     id: 9, day: 9, type: 'carousel', variant: 'numbers', angle: 'benefit-club',
@@ -125,6 +142,12 @@ export const CONTENT: ContentPiece[] = [
     audience: 'B2B', sport: 'mix',
     hook: 'Antes / después en 10s',
     script: 'before-after-10s',
+    slides: [
+      { kind: 'cover', eyebrow: 'ANTES / DESPUÉS', big: 'Antes /\ndespués\nen 10 segundos.', foot: 'desliza →' },
+      { kind: 'beforeAfter', before: { title: 'Antes', items: ['Teléfono sonando todo el día', 'Planilla desactualizada', 'Turnos pisados', '"¿Quién reservó?"'] }, after: { title: 'Con Reser+', items: ['El bot atiende 24/7', 'Agenda en tiempo real', 'Cero choques', 'Todo registrado'] } },
+      { kind: 'stat', top: '10s', big: 'para ver\nla diferencia', bottom: 'Los clubes que migraron no vuelven atrás.' },
+      { kind: 'cta', big: 'Pasate al +.', cta: 'Conocé más en el link' },
+    ],
   },
   {
     id: 13, day: 13, type: 'carousel', variant: 'useCase', angle: 'use-case',
@@ -153,6 +176,11 @@ export const CONTENT: ContentPiece[] = [
     audience: 'all', sport: 'mix',
     hook: 'Reser, pero con un +',
     script: 'plus-bloom-2',
+    slides: [
+      { kind: 'cover', eyebrow: 'EL +', big: 'Reser,\npero con\nun +.', foot: 'desliza →' },
+      { kind: 'iconList', title: 'Qué significa el +', items: ['+ que una agenda', '+ que un formulario', '+ que una app que nadie baja', '+ que una planilla de Excel'] },
+      { kind: 'cta', big: 'Es Reser+.\nEs todo.', cta: 'Conocé más en el link' },
+    ],
   },
   {
     id: 16, day: 16, type: 'carousel', variant: 'numbers', angle: 'benefit-club',
@@ -191,6 +219,12 @@ export const CONTENT: ContentPiece[] = [
     audience: 'B2C', sport: 'basquet',
     hook: 'Cancha de básquet en 4 mensajes',
     script: 'chat-demo-basquet',
+    slides: [
+      { kind: 'cover', eyebrow: 'BÁSQUET', big: 'Cancha de\nbásquet en\n4 mensajes.', foot: 'desliza →' },
+      { kind: 'chat', msgs: [{ who: 'you', text: 'Básquet domingo 10am' }, { who: 'bot', text: '🏀 Cancha techada disponible.\n¿Confirmo?' }, { who: 'you', text: 'Va' }, { who: 'bot', text: 'Reservado ✅\nDomingo 10:00 · Techada' }] },
+      { kind: 'stat', top: '4', big: 'mensajes\ny a jugar', bottom: 'Sin llamar. Sin esperar. Sin apps.' },
+      { kind: 'cta', big: 'Tu cancha\nen un chat.', cta: 'Conocé más en el link' },
+    ],
   },
   {
     id: 19, day: 19, type: 'carousel', variant: 'feature', angle: 'feature',
@@ -224,6 +258,12 @@ export const CONTENT: ContentPiece[] = [
     audience: 'B2C', sport: 'padel',
     hook: 'Lo escribís y ya está',
     script: 'typing-reveal-2',
+    slides: [
+      { kind: 'cover', eyebrow: 'PÁDEL', big: 'Lo escribís\ny ya está.', foot: 'desliza →' },
+      { kind: 'chat', msgs: [{ who: 'you', text: 'Pádel viernes 20hs para 4' }, { who: 'bot', text: '🏸 Cancha 3 disponible.\nPrecio: $8.000\n¿Confirmo?' }, { who: 'you', text: 'Confirmá' }, { who: 'bot', text: 'Listo ✅ Viernes 20:00 · Cancha 3\nLink de pago enviado 💳' }] },
+      { kind: 'stat', top: '1 min', big: 'y el partido\nestá armado', bottom: 'Escribís, confirmás, jugás.' },
+      { kind: 'cta', big: 'Reservá\ncomo chatear.', cta: 'Conocé más en el link' },
+    ],
   },
   {
     id: 22, day: 22, type: 'carousel', variant: 'question', angle: 'problem',
@@ -253,6 +293,12 @@ export const CONTENT: ContentPiece[] = [
     audience: 'B2B', sport: 'mix',
     hook: 'Planilla vs. Reser+',
     script: 'before-after-10s-2',
+    slides: [
+      { kind: 'cover', eyebrow: 'VS.', big: 'Planilla\nvs.\nReser+.', foot: 'desliza →' },
+      { kind: 'beforeAfter', before: { title: 'Planilla', items: ['Se borra sin querer', 'Nadie sabe quién editó', 'No cobra sola', 'No avisa al cliente'] }, after: { title: 'Reser+', items: ['Historial completo', 'Cada reserva tiene dueño', 'Cobra al confirmar', 'Avisa automático por WA'] } },
+      { kind: 'stat', top: '0', big: 'planillas\nnecesarias', bottom: 'Con Reser+ todo pasa en un chat.' },
+      { kind: 'cta', big: 'Cerrá la\nplanilla.\nAbrí el chat.', cta: 'Conocé más en el link' },
+    ],
   },
   {
     id: 25, day: 25, type: 'carousel', variant: 'useCase', angle: 'use-case',
@@ -285,6 +331,12 @@ export const CONTENT: ContentPiece[] = [
     audience: 'all', sport: 'mix',
     hook: 'Reser + vos',
     script: 'plus-bloom-3',
+    slides: [
+      { kind: 'cover', eyebrow: 'VOS + RESER', big: 'Reser\n+ vos.', foot: 'desliza →' },
+      { kind: 'iconList', title: 'Vos ponés el club', items: ['Las canchas', 'Los horarios', 'Los precios', 'Las reglas'] },
+      { kind: 'iconList', title: 'Reser+ pone el resto', items: ['La reserva por WhatsApp', 'El cobro automático', 'Los recordatorios', 'El tablero de control'] },
+      { kind: 'cta', big: 'Juntos,\nla cancha\nsiempre llena.', cta: 'Conocé más en el link' },
+    ],
   },
   {
     id: 28, day: 28, type: 'carousel', variant: 'quote', angle: 'brand',

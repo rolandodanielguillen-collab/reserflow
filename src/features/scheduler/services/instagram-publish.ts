@@ -16,14 +16,23 @@ interface ReelsPublishParams {
   carouselId: string
   videoUrl: string
   caption: string
+  userId?: string
 }
 
-export async function publishReelToInstagram({ carouselId, videoUrl, caption }: ReelsPublishParams) {
-  const supabase = await createServerClient()
-  let userId: string | undefined
+export async function publishReelToInstagram({ carouselId, videoUrl, caption, userId: passedUserId }: ReelsPublishParams) {
+  let supabase
+  let userId = passedUserId
 
-  const { data: { user } } = await supabase.auth.getUser()
-  userId = user?.id
+  if (passedUserId) {
+    supabase = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+  } else {
+    supabase = await createServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    userId = user?.id
+  }
 
   if (!userId) return { error: 'No autenticado' }
 

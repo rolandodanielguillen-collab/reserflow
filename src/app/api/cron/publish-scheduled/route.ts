@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { uploadSlidesToCloudinary } from '@/features/publishing/services/cloudinary-upload'
-import { publishToInstagram } from '@/features/scheduler/services/instagram-publish'
-import type { SlideOutput } from '@/features/generation/types'
+import { publishToInstagram, publishReelToInstagram } from '@/features/scheduler/services/instagram-publish'
 
 const MAX_RETRIES = 3
 
@@ -33,7 +32,7 @@ export async function GET(request: Request) {
   // Fetch scheduled posts that are due + failed posts eligible for retry
   const { data: duePosts, error } = await supabase
     .from('carousels')
-    .select('id, user_id, title, caption, slides_json, status, retry_count, slide_image_urls')
+    .select('id, user_id, title, caption, slides_json, status, retry_count, slide_image_urls, video_url')
     .lte('scheduled_at', now)
     .or(`status.eq.scheduled,and(status.eq.failed,retry_count.lt.${MAX_RETRIES})`)
     .limit(10)
@@ -65,40 +64,56 @@ export async function GET(request: Request) {
           fail_reason: null,
         }).eq('id', post.id)
 
-        const preCapUrls = post.slide_image_urls as string[] | null
-        let imageUrls: string[]
+        const videoUrl = post.video_url as string | null
+        let publishResult: { success?: boolean; postId?: string; permalink?: string; error?: string }
 
-        if (preCapUrls && preCapUrls.length > 0) {
-          console.log(postTag, 'Using', preCapUrls.length, 'pre-captured slide images')
-          imageUrls = preCapUrls
+        if (videoUrl) {
+          // ── Video/Reel path ──────────────────────────────────────────────
+          console.log(postTag, 'Video detected, publishing as Reel...')
+          publishResult = await publishReelToInstagram({
+            carouselId: post.id,
+            videoUrl,
+            caption: post.caption ?? post.title,
+            userId: post.user_id,
+          })
         } else {
-          if (!post.slides_json || (Array.isArray(post.slides_json) && post.slides_json.length === 0)) {
-            const reason = 'slides_json vacío o sin slides'
-            console.error(postTag, 'FAIL:', reason)
-            await supabase.from('carousels').update({ status: 'failed', fail_reason: reason, retry_count: currentRetry }).eq('id', post.id)
-            return { id: post.id, status: 'failed', reason }
+          // ── Carousel/Image path ──────────────────────────────────────────
+          const preCapUrls = post.slide_image_urls as string[] | null
+          let imageUrls: string[]
+
+          if (preCapUrls && preCapUrls.length > 0) {
+            console.log(postTag, 'Using', preCapUrls.length, 'pre-captured slide images')
+            imageUrls = preCapUrls
+          } else {
+            const slides = post.slides_json as Record<string, unknown>[] | null
+            if (!slides || slides.length === 0) {
+              const reason = 'Sin imágenes capturadas ni slides_json — reprogramar desde la app'
+              console.error(postTag, 'FAIL (irrecuperable, max retries):', reason)
+              await supabase.from('carousels').update({ status: 'failed', fail_reason: reason, retry_count: MAX_RETRIES }).eq('id', post.id)
+              return { id: post.id, status: 'failed', reason }
+            }
+
+            console.log(postTag, 'No pre-captured images, rendering', slides.length, 'slides server-side (fallback)...')
+            const uploadResult = await uploadSlidesToCloudinary(post.id, slides)
+
+            if ('error' in uploadResult) {
+              const reason = `Cloudinary fallback: ${uploadResult.error}`
+              console.error(postTag, 'FAIL:', reason)
+              await supabase.from('carousels').update({ status: 'failed', fail_reason: reason, retry_count: currentRetry }).eq('id', post.id)
+              return { id: post.id, status: 'failed', reason }
+            }
+            imageUrls = uploadResult.urls
+            console.log(postTag, 'Server-side render OK:', imageUrls.length, 'slides')
           }
 
-          const slides = post.slides_json as SlideOutput[]
-          console.log(postTag, 'No pre-captured images, rendering', slides.length, 'slides server-side...')
-          const uploadResult = await uploadSlidesToCloudinary(post.id, slides)
-
-          if ('error' in uploadResult) {
-            const reason = `Cloudinary upload: ${uploadResult.error}`
-            console.error(postTag, 'FAIL:', reason)
-            await supabase.from('carousels').update({ status: 'failed', fail_reason: reason, retry_count: currentRetry }).eq('id', post.id)
-            return { id: post.id, status: 'failed', reason }
-          }
-          imageUrls = uploadResult.urls
+          console.log(postTag, 'Images ready:', imageUrls.length, '| Publishing to Instagram...')
+          publishResult = await publishToInstagram({
+            carouselId: post.id,
+            imageUrls,
+            caption: post.caption ?? post.title,
+            userId: post.user_id,
+          })
         }
-
-        console.log(postTag, 'Images ready:', imageUrls.length, '| Publishing to Instagram...')
-        const publishResult = await publishToInstagram({
-          carouselId: post.id,
-          imageUrls,
-          caption: post.caption ?? post.title,
-          userId: post.user_id,
-        })
 
         if (publishResult.error) {
           const reason = `Instagram: ${publishResult.error}`
