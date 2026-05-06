@@ -458,7 +458,7 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
   function handleSchedule() {
     if (!schedInput) return
     const isVideo = piece.type === 'video' && !!piece.script
-    if (!isVideo && !piece.slides?.length) {
+    if (!piece.slides?.length && !isVideo) {
       setFeedback({ type: 'err', msg: 'Este carrusel no tiene slides. Editalo antes de programar.' })
       return
     }
@@ -477,16 +477,20 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ scriptId: piece.script, dark, cta: '', carouselId: piece.dbId }),
           })
+          const ct = res.headers.get('content-type') ?? ''
+          if (!ct.includes('application/json')) throw new Error('render no disponible')
           const result = await res.json() as { url?: string; error?: string }
           if (!result.url) throw new Error(result.error ?? 'Error renderizando video')
           videoUrl = result.url
-        } catch (err) {
-          setFeedback({ type: 'err', msg: err instanceof Error ? err.message : 'Error renderizando video. Intentá de nuevo.' })
-          return
+        } catch {
+          // Video render no disponible en producción — programar con slides como carousel
+          setFeedback({ type: 'ok', msg: 'Programando con slides (video render no disponible en prod)...' })
         }
-      } else {
+      }
+
+      if (!videoUrl && piece.slides?.length) {
         setFeedback({ type: 'ok', msg: 'Capturando slides...' })
-        if (piece.slides?.length && slideContainerRef.current) {
+        if (slideContainerRef.current) {
           try {
             const { createClient } = await import('@/lib/supabase/client')
             const supabase = createClient()
@@ -500,7 +504,7 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
             return
           }
         }
-        if (piece.slides?.length && slideImageUrls.length === 0) {
+        if (slideImageUrls.length === 0) {
           setFeedback({ type: 'err', msg: 'No se pudieron capturar las imágenes de los slides. Intentá de nuevo.' })
           return
         }
