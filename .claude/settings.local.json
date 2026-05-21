@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"$env:USERPROFILE\\\\.ssh\" -ErrorAction SilentlyContinue | Select-Object Name, Length, LastWriteTime | Format-Table -AutoSize)",
+      "PowerShell(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no padelsys-vps \"echo 'SSH OK' && hostname && uname -a\")"
+    ]
+  }
+}
