@@ -1,67 +1,55 @@
 import path from "path"
 import os from "os"
 import fs from "fs"
-import { renderMedia, selectComposition } from "@remotion/renderer"
 import Ffmpeg from "fluent-ffmpeg"
 import ffmpegPath from "ffmpeg-static"
-import { getRemotionBundle } from "./remotion-bundle"
 import { renderSlideImages } from "./render-slides"
 import { uploadFile } from "@/lib/storage"
 import { prismaAdmin } from "@/lib/prisma-admin"
 import type { DesignSlide } from "@/features/content-studio/types"
 
-function webmToMp4(webm: string, mp4: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    Ffmpeg.setFfmpegPath(ffmpegPath as string)
-    Ffmpeg(webm)
-      .videoCodec("libx264")
-      .outputOptions(["-pix_fmt yuv420p", "-movflags +faststart", "-preset fast", "-crf 18", "-an"])
-      .save(mp4)
-      .on("end", () => resolve())
-      .on("error", reject)
-  })
-}
-
-/** Renderiza la animación de portada (slide1 + slide2, 10s) → mp4. */
-async function renderIntroVideo(carouselId: string, slide1: DesignSlide, slide2: DesignSlide): Promise<string> {
-  const serveUrl = await getRemotionBundle()
+/**
+ * Animación de portada (10s): slide 2 se desliza sobre el slide 1 con
+ * 3 ciclos coseno — la MISMA curva que EventIntroScene del preview.
+ * Se compone con ffmpeg directo desde los 2 PNG ya renderizados:
+ * cero Chrome en el server (en este VPS de 4GB el render por browser
+ * crasheaba y/o tardaba 25+ min; ffmpeg lo hace en segundos).
+ *   x(t) = 1080 - 190*(1 - cos(0.6*π*t))   con t en segundos [0,10]
+ */
+async function renderIntroVideo(carouselId: string, slide1Url: string, slide2Url: string): Promise<string> {
   const ts = Date.now()
-  const webm = path.join(os.tmpdir(), `intro-${carouselId}-${ts}.webm`)
+  const p1 = path.join(os.tmpdir(), `intro1-${carouselId}-${ts}.png`)
+  const p2 = path.join(os.tmpdir(), `intro2-${carouselId}-${ts}.png`)
   const mp4 = path.join(os.tmpdir(), `intro-${carouselId}-${ts}.mp4`)
 
   try {
-    const inputProps = {
-      slide1: slide1 as unknown as Record<string, unknown>,
-      slide2: slide2 as unknown as Record<string, unknown>,
+    for (const [url, dest] of [[slide1Url, p1], [slide2Url, p2]] as const) {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`No pude descargar ${url} (${res.status})`)
+      fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()))
     }
-    const composition = await selectComposition({ serveUrl, id: "EventIntro", inputProps })
-    console.log(`[event-media] ${carouselId} renderizando intro animada (10s)...`)
-    let lastLogged = -1
-    await renderMedia({
-      composition,
-      serveUrl,
-      codec: "vp8",
-      outputLocation: webm,
-      inputProps,
-      // ponytail: 2 workers — el VPS (6 cores) comparte con todos los sitios;
-      // más concurrencia lo ahoga (load 30+) y tarda MÁS por swap
-      concurrency: 2,
-      chromiumOptions: { disableWebSecurity: true, gl: "swangle", headless: true },
-      onProgress: ({ progress }) => {
-        const pct = Math.floor(progress * 10) * 10
-        if (pct > lastLogged) {
-          lastLogged = pct
-          console.log(`[event-media] ${carouselId} intro ${pct}%`)
-        }
-      },
+
+    console.log(`[event-media] ${carouselId} componiendo intro con ffmpeg...`)
+    await new Promise<void>((resolve, reject) => {
+      Ffmpeg.setFfmpegPath(ffmpegPath as string)
+      Ffmpeg()
+        .input(p1).inputOptions(["-loop 1"])
+        .input(p2).inputOptions(["-loop 1"])
+        .complexFilter("[0:v][1:v]overlay=x='1080-190*(1-cos(0.6*PI*t))':y=0,format=yuv420p")
+        .videoCodec("libx264")
+        .outputOptions(["-t 10", "-r 30", "-preset fast", "-crf 18", "-movflags +faststart", "-an", "-threads 3"])
+        .save(mp4)
+        .on("end", () => resolve())
+        .on("error", reject)
     })
-    await webmToMp4(webm, mp4)
+
     const url = await uploadFile(fs.readFileSync(mp4), `slides/${carouselId}`, "intro.mp4")
     console.log(`[event-media] ${carouselId} intro ok`)
     return url
   } finally {
-    if (fs.existsSync(webm)) fs.unlinkSync(webm)
-    if (fs.existsSync(mp4)) fs.unlinkSync(mp4)
+    for (const f of [p1, p2, mp4]) {
+      if (fs.existsSync(f)) fs.unlinkSync(f)
+    }
   }
 }
 
@@ -87,7 +75,7 @@ export async function renderCarouselMedia(opts: {
 
   // Portada animada en lugar del still del slide 1
   try {
-    const introUrl = await renderIntroVideo(opts.carouselId, opts.slides[0]!, opts.slides[1]!)
+    const introUrl = await renderIntroVideo(opts.carouselId, stills.urls[0]!, stills.urls[1]!)
     urls[0] = introUrl
   } catch (err) {
     console.error("[event-media] intro falló, uso slide estático:", err)
