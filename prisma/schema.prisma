@@ -101,6 +101,9 @@ model BrandSettings {
   telegramChatId   String?
   telegramLinkCode String? @unique
 
+  // Video de cierre de marca para carruseles de evento (pack final)
+  closingVideoUrl String? @db.Text
+
   pendingApprovalCarouselId String?
 
   createdAt DateTime @default(now())

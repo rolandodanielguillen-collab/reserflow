@@ -136,12 +136,31 @@ export function EventSlide1({ data, palette }: SlideBaseProps) {
   )
 }
 
-// ── Slide 2: Premios & Categorías ─────────────────────────────────────────
+// ── Slide 2: Premios & Categorías (layout proporcional) ──────────────────
 export function EventSlide2({ data, palette }: SlideBaseProps) {
   const { background: bg, primary: neon, accent: acc, text: txt } = palette
   const bw = data.borderWidth || 2
   const prizeMenLines = data.prizesMen ? data.prizesMen.split('\n').filter(Boolean) : []
   const prizeWomenLines = data.prizesWomen ? data.prizesWomen.split('\n').filter(Boolean) : []
+  const hasCats = !!(data.categoriesMen || data.categoriesWomen)
+  const hasPrizes = prizeMenLines.length > 0 || prizeWomenLines.length > 0
+  const line = `${txt}22`
+
+  const CatBlock = ({ label, value }: { label: string; value: string }) => (
+    <div style={{ flex: 1, borderLeft: `4px solid ${neon}`, paddingLeft: 22 }}>
+      <div style={{ color: txt, fontSize: 38, fontFamily: bebasNeue, letterSpacing: 2, lineHeight: 1, marginBottom: 10 }}>{label}</div>
+      <div style={{ color: acc, fontSize: 25, fontFamily: montserrat, fontWeight: 600, letterSpacing: 0.5, lineHeight: 1.45 }}>{value}</div>
+    </div>
+  )
+
+  const PrizeCol = ({ label, lines }: { label: string; lines: string[] }) => (
+    <div style={{ flex: 1 }}>
+      <div style={{ color: neon, fontSize: 30, fontFamily: bebasNeue, letterSpacing: 2, marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${line}` }}>{label}</div>
+      {lines.map((l, i) => (
+        <div key={i} style={{ color: txt, fontSize: 22, fontFamily: montserrat, fontWeight: 500, lineHeight: 1.35, padding: '5px 0' }}>{l}</div>
+      ))}
+    </div>
+  )
 
   return (
     <div style={{ position: 'relative', width: 1080, height: 1350, overflow: 'hidden', backgroundColor: bg, fontFamily: montserrat }}>
@@ -150,74 +169,62 @@ export function EventSlide2({ data, palette }: SlideBaseProps) {
       <div style={{ position: 'absolute', bottom: 80, left: -120, width: 420, height: 420, borderRadius: '50%', background: neon, opacity: 0.10, filter: 'blur(110px)' }}/>
       <Frame bw={bw} bc={neon}/>
 
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', padding: '36px 52px', boxSizing: 'border-box' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', padding: '40px 56px', boxSizing: 'border-box' }}>
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: txt, fontSize: 20, fontFamily: montserrat, fontWeight: 400, opacity: 0.85 }}>({data.clientNumber || '02'}) {data.headerBrand || 'padel sys'}</span>
           <span style={{ color: txt, fontSize: 20, fontFamily: montserrat, fontWeight: 400, opacity: 0.85 }}>{data.year || String(new Date().getFullYear())}</span>
         </div>
 
-        <div style={{ textAlign: 'right', marginTop: 8 }}>
-          <div style={{ color: neon, fontSize: 52, fontFamily: bebasNeue, letterSpacing: 3, lineHeight: 1 }}>PREMIOS &amp;</div>
-          <div style={{ color: txt, fontSize: 130, fontFamily: bebasNeue, letterSpacing: 2, lineHeight: 0.88 }}>CATEGORIAS</div>
+        {/* Título */}
+        <div style={{ textAlign: 'right', marginTop: 14 }}>
+          <div style={{ color: neon, fontSize: 46, fontFamily: bebasNeue, letterSpacing: 4, lineHeight: 1 }}>PREMIOS &amp;</div>
+          <div style={{ color: txt, fontSize: 112, fontFamily: bebasNeue, letterSpacing: 2, lineHeight: 0.9 }}>CATEGORIAS</div>
         </div>
 
-        <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: 24, paddingBottom: 16 }}>
-          {data.categoriesMen && (
-            <div>
-              <div style={{ color: txt, fontSize: 44, fontFamily: bebasNeue, letterSpacing: 2, marginBottom: 6 }}>CABALLEROS</div>
-              <div style={{ color: acc, fontSize: 26, fontFamily: montserrat, fontWeight: 600, letterSpacing: 1 }}>{data.categoriesMen}</div>
+        {/* Contenido: bloques apilados con ritmo fijo (sin estirar) */}
+        <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 44, paddingTop: 48, minHeight: 0 }}>
+          {hasCats && (
+            <div style={{ display: 'flex', gap: 44 }}>
+              {data.categoriesMen && <CatBlock label="CABALLEROS" value={data.categoriesMen}/>}
+              {data.categoriesWomen && <CatBlock label="DAMAS" value={data.categoriesWomen}/>}
             </div>
           )}
-          {data.categoriesWomen && (
+
+          {hasPrizes && (
             <div>
-              <div style={{ color: txt, fontSize: 44, fontFamily: bebasNeue, letterSpacing: 2, marginBottom: 6 }}>DAMAS</div>
-              <div style={{ color: acc, fontSize: 26, fontFamily: montserrat, fontWeight: 600, letterSpacing: 1 }}>{data.categoriesWomen}</div>
-            </div>
-          )}
-          {(prizeMenLines.length > 0 || prizeWomenLines.length > 0) && (
-            <div>
-              <div style={{ color: txt, fontSize: 44, fontFamily: bebasNeue, letterSpacing: 2, marginBottom: 18 }}>PREMIOS CAMPEONES</div>
-              <div style={{ display: 'flex', gap: 40 }}>
-                {prizeMenLines.length > 0 && (
-                  <div style={{ flex: 1 }}>
-                    <div style={{ color: neon, fontSize: 34, fontFamily: bebasNeue, letterSpacing: 2, marginBottom: 14 }}>CABALLEROS.</div>
-                    {prizeMenLines.map((line, i) => (
-                      <div key={i} style={{ color: txt, fontSize: 22, fontFamily: montserrat, fontWeight: 400, marginBottom: 8, lineHeight: 1.3 }}>{line}</div>
-                    ))}
-                  </div>
-                )}
-                {prizeWomenLines.length > 0 && (
-                  <div style={{ flex: 1 }}>
-                    <div style={{ color: neon, fontSize: 34, fontFamily: bebasNeue, letterSpacing: 2, marginBottom: 14 }}>DAMAS.</div>
-                    {prizeWomenLines.map((line, i) => (
-                      <div key={i} style={{ color: txt, fontSize: 22, fontFamily: montserrat, fontWeight: 400, marginBottom: 8, lineHeight: 1.3 }}>{line}</div>
-                    ))}
-                  </div>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                <span style={{ color: txt, fontSize: 40, fontFamily: bebasNeue, letterSpacing: 2, lineHeight: 1 }}>PREMIOS CAMPEONES</span>
+                <span style={{ flex: 1, height: 1, background: line }}/>
+              </div>
+              <div style={{ display: 'flex', gap: 44 }}>
+                {prizeMenLines.length > 0 && <PrizeCol label="CABALLEROS" lines={prizeMenLines}/>}
+                {prizeWomenLines.length > 0 && <PrizeCol label="DAMAS" lines={prizeWomenLines}/>}
               </div>
             </div>
           )}
         </div>
 
+        {/* Banda inferior: condiciones (chip) + inscripciones (barra sólida) */}
         {data.conditions && (
-          <div style={{ backgroundColor: neon, borderRadius: 8, padding: '12px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            <span style={{ color: bg, fontSize: 15, fontFamily: montserrat, fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase', opacity: 0.8 }}>{data.prizesLabel || 'PREMIOS SUJETO A'}</span>
-            <span style={{ color: bg, fontSize: 24, fontFamily: montserrat, fontWeight: 800, letterSpacing: 1 }}>{data.conditions}</span>
+          <div style={{ alignSelf: 'center', marginBottom: 14, padding: '9px 26px', borderRadius: 999, border: `1.5px solid ${neon}`, color: txt, fontSize: 18, fontFamily: montserrat, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+            {data.prizesLabel || 'Premios sujeto a'}&nbsp;·&nbsp;<span style={{ color: neon, fontWeight: 800 }}>{data.conditions}</span>
           </div>
         )}
 
         {data.price && (
-          <div style={{ marginTop: 12, backgroundColor: neon, borderRadius: 12, padding: '22px 30px', border: `${bw}px solid ${neon}`, textAlign: 'center' }}>
-            <div style={{ color: bg, fontSize: 34, fontFamily: bebasNeue, letterSpacing: 3, marginBottom: data.footerText ? 6 : 0 }}>
-              INSCRIPCIONES:&nbsp;<span style={{ color: bg }}>{data.price}</span>
+          <div style={{ backgroundColor: neon, borderRadius: 14, padding: '24px 32px', textAlign: 'center' }}>
+            <div style={{ color: bg, fontSize: 36, fontFamily: bebasNeue, letterSpacing: 3, lineHeight: 1 }}>
+              INSCRIPCIONES: {data.price}
             </div>
             {data.footerText && (
-              <div style={{ color: bg, fontSize: 20, fontFamily: montserrat, fontWeight: 500, letterSpacing: 0.5, opacity: 0.85 }}>{data.footerText}</div>
+              <div style={{ color: bg, fontSize: 19, fontFamily: montserrat, fontWeight: 600, letterSpacing: 0.5, opacity: 0.85, marginTop: 8 }}>{data.footerText}</div>
             )}
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
+        {/* Footer */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
           <span style={{ color: txt, fontSize: 13, fontFamily: montserrat, fontWeight: 300, letterSpacing: 3, opacity: 0.55 }}>{data.footerLeft || 'SISTEMA DE GESTIÓN'}</span>
           <span style={{ color: txt, fontSize: 13, fontFamily: montserrat, fontWeight: 300, letterSpacing: 3, opacity: 0.55 }}>{data.footerRight || 'WWW.PADELSYS.COM'}</span>
         </div>

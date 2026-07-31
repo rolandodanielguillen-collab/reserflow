@@ -11,7 +11,7 @@ import {
 } from '@/features/ingest/flyer-ingest'
 import { pickBackgroundImage } from '@/features/ingest/player-image'
 import { PALETTES, getPaletteByColor } from '@/features/design/palettes'
-import { renderSlideImages } from '@/features/publishing/services/render-slides'
+import { renderCarouselMedia } from '@/features/publishing/services/render-event-media'
 import { publishToInstagram } from '@/features/scheduler/services/instagram-publish'
 import { tgSendMessage, tgSendMediaGroup, tgAnswerCallback, tgDownloadFile } from './telegram'
 
@@ -177,7 +177,7 @@ async function generateAndSendPreview(chatId: string, carouselId: string, opts?:
 
   const brand = await prismaAdmin.brandSettings.findFirst({
     where: { userId: carousel.userId },
-    select: { brandName: true, logoUrl: true },
+    select: { brandName: true, logoUrl: true, whatsappPhone: true },
   })
 
   await tgSendMessage(chatId, '🎨 Generando el diseño... (~1 min)')
@@ -202,6 +202,7 @@ async function generateAndSendPreview(chatId: string, carouselId: string, opts?:
   const slides = buildEventSlides(extracted, {
     brandName: brand?.brandName,
     logoUrl: brand?.logoUrl,
+    whatsappPhone: brand?.whatsappPhone,
     igHandle,
   }, { playerImageUrl })
 
@@ -218,7 +219,7 @@ async function generateAndSendPreview(chatId: string, carouselId: string, opts?:
     },
   })
 
-  const rendered = await renderSlideImages({
+  const rendered = await renderCarouselMedia({
     carouselId,
     userId: carousel.userId,
     slides,
@@ -351,7 +352,7 @@ async function handleCallback(cb: NonNullable<TgUpdate['callback_query']>) {
         return
       }
       await tgSendMessage(chatId, '🎨 Renderizando con el diseño actual... (~1 min)')
-      const rendered = await renderSlideImages({ carouselId: id, userId: carousel.userId, slides, dark: carousel.darkMode })
+      const rendered = await renderCarouselMedia({ carouselId: id, userId: carousel.userId, slides, dark: carousel.darkMode })
       if ('error' in rendered) {
         await tgSendMessage(chatId, `❌ Error renderizando: ${rendered.error}`)
         return

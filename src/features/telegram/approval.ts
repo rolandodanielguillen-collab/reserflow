@@ -1,5 +1,5 @@
 import { prismaAdmin } from '@/lib/prisma-admin'
-import { renderSlideImages } from '@/features/publishing/services/render-slides'
+import { renderCarouselMedia } from '@/features/publishing/services/render-event-media'
 import { normalizeSlides } from '@/features/content-studio/slide-utils'
 import { tgSendMediaGroup, tgSendMessage } from './telegram'
 
@@ -39,7 +39,7 @@ export async function sendApprovalToTelegram(carouselId: string): Promise<boolea
       return true
     }
     await tgSendMessage(chatId, `🎨 Renderizando <b>${carousel.title}</b>... (~1 min)`)
-    const rendered = await renderSlideImages({
+    const rendered = await renderCarouselMedia({
       carouselId: carousel.id,
       userId: carousel.userId,
       slides,

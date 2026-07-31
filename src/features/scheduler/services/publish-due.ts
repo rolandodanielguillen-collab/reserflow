@@ -1,6 +1,6 @@
 import { prismaAdmin } from "@/lib/prisma-admin"
 import { notifyOperator } from "@/features/telegram/notify"
-import { renderSlideImages } from "@/features/publishing/services/render-slides"
+import { renderCarouselMedia } from "@/features/publishing/services/render-event-media"
 import { renderReelToFile } from "@/features/publishing/services/render-reel"
 import { normalizeSlides } from "@/features/content-studio/slide-utils"
 import {
@@ -125,7 +125,7 @@ export async function publishDuePosts(): Promise<PublishDueResult> {
             }
 
             console.log(postTag, "Rendering", slides.length, "slides con Remotion... dark:", post.darkMode)
-            const renderResult = await renderSlideImages({
+            const renderResult = await renderCarouselMedia({
               carouselId: post.id,
               userId: post.userId,
               slides,

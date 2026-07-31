@@ -24,6 +24,24 @@ export type ExtractedFlyer = {
   additional_info?: string | null
   palette_id?: string | null // override manual del operador (botón Cambiar colores)
   custom_palette?: PaletteTokens | null // paleta personalizada desde el panel
+  overrides?: EventDataOverrides | null // campos editados a mano en el panel
+}
+
+/** Campos del flyer editables desde el panel (pisan lo extraído por IA). */
+export type EventDataOverrides = {
+  tournamentName?: string
+  clubName?: string
+  city?: string
+  startDate?: string
+  endDate?: string
+  phone?: string
+  categoriesSummary?: string
+  categoriesMen?: string
+  categoriesWomen?: string
+  prizesMen?: string
+  prizesWomen?: string
+  price?: string
+  conditions?: string
 }
 
 export const REQUIRED_FIELDS: Array<{ key: keyof ExtractedFlyer; question: string }> = [
@@ -136,32 +154,29 @@ export async function generateCaption(data: ExtractedFlyer): Promise<string> {
     messages: [
       {
         role: 'system',
-        content: 'Eres un experto en marketing deportivo especializado en pádel. Redactas captions para Instagram que generan emoción y engagement. Escribes en español, con energía, emojis estratégicos y llamadas a la acción claras. El caption siempre termina con un bloque de hashtags relevantes.',
+        content: 'Redactas captions de Instagram para torneos de pádel: cortos, secos e informativos. Cero frases motivacionales, cero relleno, cero exclamaciones dobles. Solo los datos del torneo, ordenados y fáciles de leer.',
       },
       {
         role: 'user',
-        content: `Crea un caption para Instagram para este torneo de pádel:
+        content: `Caption para este torneo:
 
-🏆 Torneo: ${data.tournament_name ?? ''}
-🏟️ Club: ${data.club_name ?? ''}
-📍 Ciudad: ${data.city ?? ''}
-📅 Fechas: ${data.start_date ?? ''} al ${data.end_date ?? ''}
-💰 Precio inscripción: ${price} por persona
-🎾 Categorías: ${cats}
-🥇 Premios: ${prizes}
-📞 Contacto: ${data.contact_phone ?? ''}
-ℹ️ Info adicional: ${data.additional_info ?? ''}
+Torneo: ${data.tournament_name ?? ''}
+Club: ${data.club_name ?? ''}
+Ciudad: ${data.city ?? ''}
+Fechas: ${data.start_date ?? ''} al ${data.end_date ?? ''}
+Inscripción: ${price}
+Categorías: ${cats}
+Premios: ${prizes}
+Contacto: ${data.contact_phone ?? ''}
 
-INSTRUCCIONES:
-- Máximo 2.200 caracteres (límite Instagram)
-- Empieza con una frase gancho que genere emoción (NO empieces con "¡")
-- Incluye los datos clave: nombre, fechas, categorías, precio, contacto
-- Termina con una llamada a la acción clara (inscripción, contacto, etc.)
-- Agrega 15-20 hashtags relevantes de pádel al final, separados por espacios
-- Usa emojis pero con moderación (máximo 8-10 en todo el texto)
-- Tono: energético, deportivo, inclusivo
+FORMATO EXACTO:
+- Línea 1: nombre del torneo (puede llevar 🎾)
+- Después, una línea por dato con su emoji: 📅 fechas, 📍 lugar, 🏆 categorías, 💰 inscripción, 📞 contacto
+- Sin frases de cierre, sin "no te lo pierdas", sin preguntas al lector
+- Máximo 400 caracteres antes de los hashtags
+- Al final, 5-7 hashtags de pádel en una línea
 
-Devuelve SOLO el caption, sin explicaciones ni comillas.`,
+Devolvé SOLO el caption.`,
       },
     ],
   }, 30000)
@@ -232,6 +247,7 @@ export type BrandForFlyer = {
   igHandle?: string | null
   clientNumber?: string | null
   website?: string | null
+  whatsappPhone?: string | null // teléfono de contacto FIJO de la marca (ej. PadelSys 0986713030)
 }
 
 /** Arma los 3 slides de evento a partir de los datos extraídos + marca del tenant. */
@@ -257,7 +273,9 @@ export function buildEventSlides(
     text: ensureReadableText(paletteFull.background, paletteFull.text),
   }
 
-  const phone = (data.contact_phone ?? '').replace(/-+/g, ' ').trim()
+  // El teléfono de contacto es el FIJO de la marca (el flyer original queda
+  // como fallback): en PadelSys los flyers siempre llevan su número.
+  const phone = (brand.whatsappPhone ?? data.contact_phone ?? '').replace(/-+/g, ' ').replace(/^\+?595/, '0').trim()
   const price = data.price_per_person
     ? `${Number(data.price_per_person).toLocaleString('es-PY')} ${data.currency ?? ''} / persona`.trim()
     : ''
@@ -275,14 +293,15 @@ export function buildEventSlides(
     .slice(0, 8)
     .join(' | ')
 
+  const o = data.overrides ?? {}
   const base: EventFlyerData = {
-    clubName: data.club_name ?? '',
-    tournamentName: data.tournament_name ?? '',
-    startDate: data.start_date ?? undefined,
-    endDate: data.end_date ?? undefined,
-    categoriesSummary,
-    city: data.city ?? '',
-    phone,
+    clubName: o.clubName ?? data.club_name ?? '',
+    tournamentName: o.tournamentName ?? data.tournament_name ?? '',
+    startDate: o.startDate ?? data.start_date ?? undefined,
+    endDate: o.endDate ?? data.end_date ?? undefined,
+    categoriesSummary: o.categoriesSummary ?? categoriesSummary,
+    city: o.city ?? data.city ?? '',
+    phone: o.phone ?? phone,
     year: String(new Date().getFullYear()),
     logoUrl: brand.logoUrl ?? undefined,
     headerBrand: brand.brandName?.toLowerCase() || 'padel sys',
@@ -291,12 +310,12 @@ export function buildEventSlides(
     igHandle: brand.igHandle ?? undefined,
     clientNumber: brand.clientNumber ?? '01',
     playerImageUrl: opts?.playerImageUrl,
-    categoriesMen: categoriesByGender(data.categories, MEN),
-    categoriesWomen: categoriesByGender(data.categories, WOMEN),
-    prizesMen,
-    prizesWomen,
-    price,
-    conditions: extractCondition(data.additional_info ?? ''),
+    categoriesMen: o.categoriesMen ?? categoriesByGender(data.categories, MEN),
+    categoriesWomen: o.categoriesWomen ?? categoriesByGender(data.categories, WOMEN),
+    prizesMen: o.prizesMen ?? prizesMen,
+    prizesWomen: o.prizesWomen ?? prizesWomen,
+    price: o.price ?? price,
+    conditions: o.conditions ?? extractCondition(data.additional_info ?? ''),
   }
 
   return [

@@ -4,7 +4,7 @@ import { prismaRls } from '@/lib/prisma-rls'
 import { auth } from '@/lib/auth'
 import { publishToInstagram } from '@/features/scheduler/services/instagram-publish'
 import { sendApprovalRequest, notifyPublished, notifyPublishFailed } from '@/features/notifications/services/ycloud'
-import { renderSlideImages } from '@/features/publishing/services/render-slides'
+import { renderCarouselMedia } from '@/features/publishing/services/render-event-media'
 import { normalizeSlides } from '@/features/content-studio/slide-utils'
 
 export async function approveCarousel(carouselId: string) {
@@ -111,7 +111,7 @@ export async function publishCarouselNow(carouselId: string) {
     if (slides.length === 0) {
       return { error: 'Este carrusel no tiene slides para renderizar.' }
     }
-    const rendered = await renderSlideImages({
+    const rendered = await renderCarouselMedia({
       carouselId,
       userId: session.user.id,
       slides,

@@ -5,7 +5,7 @@
 
 import { auth } from '@/lib/auth'
 import { prismaAdmin } from '@/lib/prisma-admin'
-import { buildEventSlides, type ExtractedFlyer } from '@/features/ingest/flyer-ingest'
+import { buildEventSlides, type ExtractedFlyer, type EventDataOverrides } from '@/features/ingest/flyer-ingest'
 import type { PaletteTokens } from '@/features/content-studio/types'
 
 export type EventDesignInput = {
@@ -13,6 +13,7 @@ export type EventDesignInput = {
   customPalette?: PaletteTokens | null
   playerImageUrl?: string | null  // url de la biblioteca; null = sin fondo; undefined = mantener
   caption?: string
+  dataOverrides?: EventDataOverrides // campos del torneo editados a mano
 }
 
 export async function updateEventDesign(
@@ -39,6 +40,10 @@ export async function updateEventDesign(
     extracted.custom_palette = null
   }
 
+  if (input.dataOverrides) {
+    extracted.overrides = { ...(extracted.overrides ?? {}), ...input.dataOverrides }
+  }
+
   // Fondo: mantener el actual salvo elección explícita
   let playerImageUrl: string | undefined
   if (input.playerImageUrl === undefined) {
@@ -52,13 +57,14 @@ export async function updateEventDesign(
 
   const brand = await prismaAdmin.brandSettings.findFirst({
     where: { userId: carousel.userId },
-    select: { brandName: true, logoUrl: true },
+    select: { brandName: true, logoUrl: true, whatsappPhone: true },
   })
   const igHandle = brand?.brandName ? `@${brand.brandName.toLowerCase().replace(/[^a-z0-9_.]/g, '')}` : undefined
 
   const slides = buildEventSlides(extracted, {
     brandName: brand?.brandName,
     logoUrl: brand?.logoUrl,
+    whatsappPhone: brand?.whatsappPhone,
     igHandle,
   }, { playerImageUrl })
 

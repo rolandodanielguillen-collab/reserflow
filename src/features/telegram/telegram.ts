@@ -47,10 +47,10 @@ export async function tgSendPhoto(chatId: string, photoUrl: string, caption?: st
   })
 }
 
-/** Manda hasta 10 fotos como álbum (el preview del carrusel). */
-export async function tgSendMediaGroup(chatId: string, photoUrls: string[], caption?: string) {
-  const media = photoUrls.slice(0, 10).map((url, i) => ({
-    type: 'photo',
+/** Manda hasta 10 fotos/videos como álbum (el preview del carrusel). */
+export async function tgSendMediaGroup(chatId: string, mediaUrls: string[], caption?: string) {
+  const media = mediaUrls.slice(0, 10).map((url, i) => ({
+    type: /\.(mp4|mov)(\?|$)/i.test(url) ? 'video' : 'photo',
     media: url,
     ...(i === 0 && caption ? { caption: caption.slice(0, 1024) } : {}),
   }))

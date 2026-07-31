@@ -12,7 +12,8 @@ import { updateEventDesign, listLibraryImagesForPicker } from '@/features/conten
 import { publishCarouselNow } from '@/features/content-studio/services/update-carousel-status'
 import { setCarouselStatus } from '@/features/content-studio/services/set-carousel-status'
 import { getFlyerPieces, type FlyerPiece } from './flyer-actions'
-import type { DesignSlide, PaletteTokens } from '@/features/content-studio/types'
+import type { DesignSlide, EventFlyerData, PaletteTokens } from '@/features/content-studio/types'
+import type { EventDataOverrides } from '@/features/ingest/flyer-ingest'
 
 const INK_SOFT = 'rgba(245,242,235,0.55)'
 const LINE = 'rgba(245,242,235,0.09)'
@@ -31,6 +32,8 @@ export function FlyerEditor() {
   const [custom, setCustom] = useState<PaletteTokens | null>(null)
   const [bgUrl, setBgUrl] = useState<string | null | undefined>(undefined)
   const [caption, setCaption] = useState('')
+  const [dataEdit, setDataEdit] = useState<EventDataOverrides>({})
+  const [showDatos, setShowDatos] = useState(false)
   const [dirty, setDirty] = useState(false)
 
   const [images, setImages] = useState<Array<{ id: string; url: string; tags: string[] }>>([])
@@ -57,6 +60,7 @@ export function FlyerEditor() {
     setCustom(null)
     setBgUrl(undefined)
     setCaption(sel.caption ?? '')
+    setDataEdit({})
     setSlideIdx(0)
     setDirty(false)
     setMsg(null)
@@ -73,15 +77,35 @@ export function FlyerEditor() {
     return null // usar la que trae el slide
   }, [custom, paletteId])
 
+  // Datos actuales del flyer (para prefill del formulario)
+  const baseData: EventFlyerData = useMemo(() => {
+    const first = sel?.slides[0]
+    return first?.kind === 'event' ? first.data : {}
+  }, [sel])
+
   const liveSlides: DesignSlide[] = useMemo(() => {
     if (!sel) return []
     return sel.slides.map(s => {
       if (s.kind !== 'event') return s
-      const data = { ...s.data }
+      const data: EventFlyerData = { ...s.data, ...cleanOverrides(dataEdit) }
       if (bgUrl !== undefined && s.slide === 1) data.playerImageUrl = bgUrl ?? undefined
+      else data.playerImageUrl = s.data.playerImageUrl
       return { ...s, data, palette: livePalette ?? s.palette }
     })
-  }, [sel, livePalette, bgUrl])
+  }, [sel, livePalette, bgUrl, dataEdit])
+
+  function cleanOverrides(o: EventDataOverrides): Partial<EventFlyerData> {
+    const out: Record<string, string> = {}
+    for (const [k, v] of Object.entries(o)) {
+      if (v !== undefined && v !== null) out[k] = v
+    }
+    return out as Partial<EventFlyerData>
+  }
+
+  function setField(key: keyof EventDataOverrides, value: string) {
+    setDataEdit(prev => ({ ...prev, [key]: value }))
+    setDirty(true)
+  }
 
   async function guardar(): Promise<boolean> {
     if (!sel) return false
@@ -89,6 +113,7 @@ export function FlyerEditor() {
     const res = await updateEventDesign(sel.id, {
       ...(custom ? { customPalette: custom } : { paletteId }),
       ...(bgUrl !== undefined ? { playerImageUrl: bgUrl } : {}),
+      ...(Object.keys(dataEdit).length ? { dataOverrides: dataEdit } : {}),
       caption,
     })
     setBusy(null)
@@ -279,6 +304,53 @@ export function FlyerEditor() {
               })}
             </div>
             <div style={{ fontFamily: FM, fontSize: 9, color: INK_SOFT, marginBottom: 16 }}>Subí más fotos en <b>Biblioteca</b> · el fondo va en el slide 1</div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <div style={{ ...SECTION, marginBottom: 0 }}>Datos del torneo</div>
+              <button onClick={() => setShowDatos(v => !v)} style={{ all: 'unset', cursor: 'pointer', fontFamily: FM, fontSize: 10, color: T.mint }}>
+                {showDatos ? '▾ ocultar' : '▸ editar'}
+              </button>
+            </div>
+            {showDatos && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                {([
+                  ['tournamentName', 'Torneo', baseData.tournamentName],
+                  ['clubName', 'Club', baseData.clubName],
+                  ['city', 'Ciudad', baseData.city],
+                  ['startDate', 'Fecha inicio (YYYY-MM-DD)', baseData.startDate],
+                  ['endDate', 'Fecha fin (YYYY-MM-DD)', baseData.endDate],
+                  ['phone', 'Teléfono', baseData.phone],
+                  ['categoriesSummary', 'Categorías (portada)', baseData.categoriesSummary],
+                  ['categoriesMen', 'Categorías caballeros', baseData.categoriesMen],
+                  ['categoriesWomen', 'Categorías damas', baseData.categoriesWomen],
+                  ['price', 'Inscripción', baseData.price],
+                  ['conditions', 'Condición premios', baseData.conditions],
+                ] as Array<[keyof EventDataOverrides, string, string | undefined]>).map(([key, label, base]) => (
+                  <label key={key} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <span style={{ fontFamily: FM, fontSize: 8.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: INK_SOFT }}>{label}</span>
+                    <input
+                      value={dataEdit[key] ?? base ?? ''}
+                      onChange={e => setField(key, e.target.value)}
+                      style={{ padding: '8px 11px', borderRadius: 8, border: `1px solid ${LINE}`, background: T.navyDeep, color: T.cream, fontFamily: FD, fontSize: 12.5, outline: 'none' }}
+                    />
+                  </label>
+                ))}
+                {([
+                  ['prizesMen', 'Premios caballeros (uno por línea)', baseData.prizesMen],
+                  ['prizesWomen', 'Premios damas (uno por línea)', baseData.prizesWomen],
+                ] as Array<[keyof EventDataOverrides, string, string | undefined]>).map(([key, label, base]) => (
+                  <label key={key} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <span style={{ fontFamily: FM, fontSize: 8.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: INK_SOFT }}>{label}</span>
+                    <textarea
+                      value={dataEdit[key] ?? base ?? ''}
+                      onChange={e => setField(key, e.target.value)}
+                      rows={3}
+                      style={{ padding: '8px 11px', borderRadius: 8, border: `1px solid ${LINE}`, background: T.navyDeep, color: T.cream, fontFamily: FD, fontSize: 12.5, outline: 'none', resize: 'vertical' }}
+                    />
+                  </label>
+                ))}
+              </div>
+            )}
 
             <div style={SECTION}>Caption de Instagram</div>
             <textarea value={caption} onChange={e => { setCaption(e.target.value); setDirty(true) }} rows={6} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 10, border: `1px solid ${LINE}`, background: T.navyDeep, color: T.cream, fontFamily: FD, fontSize: 12.5, lineHeight: 1.5, outline: 'none', resize: 'vertical', marginBottom: 16 }}/>

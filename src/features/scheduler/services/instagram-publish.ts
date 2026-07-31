@@ -151,17 +151,32 @@ export async function publishToInstagram({ carouselId, imageUrls, caption, userI
       creationId = json.id
 
     } else {
-      // ── Carousel post (2-10 images) ──────────────────────────────────────
+      // ── Carousel post (2-10 items, imágenes y/o videos) ─────────────────
+      const isVideoUrl = (u: string) => /\.(mp4|mov)(\?|$)/i.test(u)
+      const pollChild = async (childId: string) => {
+        // Los videos necesitan procesamiento server-side de IG antes del carrusel
+        for (let i = 0; i < 24; i++) {
+          const r = await fetch(`${BASE}/${childId}?fields=status_code,status&access_token=${token}`)
+          const j = await r.json() as { status_code?: string; status?: string }
+          if (j.status_code === 'FINISHED') return
+          if (j.status_code === 'ERROR') throw new Error(`Video rechazado por Instagram: ${j.status ?? 'unknown'}`)
+          await new Promise(res => setTimeout(res, 5_000))
+        }
+        throw new Error('Instagram no terminó de procesar un video del carrusel (120s)')
+      }
+
       const containerIds: string[] = []
       for (const url of imageUrls.slice(0, 10)) {
+        const video = isVideoUrl(url)
         const params = new URLSearchParams({
-          image_url:        url,
           is_carousel_item: 'true',
           access_token:     token,
+          ...(video ? { media_type: 'VIDEO', video_url: url } : { image_url: url }),
         })
         const res  = await fetch(`${BASE}/${igId}/media`, { method: 'POST', body: params })
         const json = await res.json() as { id?: string; error?: { message: string } }
         if (!json.id) throw new Error(json.error?.message ?? `Error creando container para ${url}`)
+        if (video) await pollChild(json.id)
         containerIds.push(json.id)
       }
 
