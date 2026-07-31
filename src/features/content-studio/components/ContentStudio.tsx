@@ -232,6 +232,9 @@ function CalendarPiece({ piece, dark, onClick }: { piece: RichPiece; dark: boole
       <div style={{ width: w, borderRadius: 5, overflow: 'hidden', border: `1px solid ${dark ? 'rgba(255,255,255,0.08)' : 'rgba(15,30,61,0.1)'}`, position: 'relative' }}>
         {piece.type === 'carousel' && piece.slides ? (
           <ScaledSlide slide={piece.slides[0]!} dark={piece.darkMode} index={0} total={piece.slides.length} width={w}/>
+        ) : piece.type === 'carousel' && piece.imageUrls?.length ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={piece.imageUrls[0]} alt="" style={{ width: w, height: w * 1.25, objectFit: 'cover', display: 'block' }}/>
         ) : (
           <VideoPreview dark={piece.darkMode} width={w} scriptId={piece.script}/>
         )}
@@ -278,6 +281,9 @@ function PieceCard({ piece, dark, onClick, compact }: { piece: RichPiece; dark: 
       <div style={{ flexShrink: 0, borderRadius: 8, overflow: 'hidden', border: `1px solid ${dark ? 'rgba(255,255,255,0.06)' : 'rgba(15,30,61,0.08)'}` }}>
         {piece.type === 'carousel' && piece.slides ? (
           <ScaledSlide slide={piece.slides[0]!} dark={piece.darkMode} index={0} total={piece.slides.length} width={compact ? 80 : 100}/>
+        ) : piece.type === 'carousel' && piece.imageUrls?.length ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={piece.imageUrls[0]} alt="" style={{ width: compact ? 80 : 100, height: (compact ? 80 : 100) * 1.25, objectFit: 'cover', display: 'block' }}/>
         ) : (
           <VideoPreview dark={piece.darkMode} width={compact ? 80 : 100} scriptId={piece.script}/>
         )}
@@ -423,7 +429,7 @@ export function ContentStudio() {
     rows.filter(r => r.template_piece_id != null).forEach(row => {
       const tmpl = CONTENT.find(c => c.id === row.template_piece_id)
       if (!tmpl) return
-      result.push({ ...tmpl, dbId: row.id, dbStatus: row.status, scheduledAt: row.scheduled_at, caption: row.caption, isTemplate: true, darkMode: row.dark_mode })
+      result.push({ ...tmpl, dbId: row.id, dbStatus: row.status, scheduledAt: row.scheduled_at, caption: row.caption, isTemplate: true, darkMode: row.dark_mode, imageUrls: row.slide_image_urls })
     })
 
     // AI-generated pieces
@@ -435,6 +441,7 @@ export function ContentStudio() {
         slides: slides.length > 0 ? slides : undefined,
         dbId: row.id, dbStatus: row.status, scheduledAt: row.scheduled_at,
         caption: row.caption, isTemplate: false, darkMode: row.dark_mode,
+        imageUrls: row.slide_image_urls,
       })
     })
 

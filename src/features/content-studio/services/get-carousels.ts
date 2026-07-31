@@ -17,6 +17,7 @@ export type CarouselRow = {
   created_at: string
   template_piece_id: number | null
   dark_mode: boolean
+  slide_image_urls: string[]
 }
 
 function toRow(c: Record<string, unknown>): CarouselRow {
@@ -34,6 +35,17 @@ function toRow(c: Record<string, unknown>): CarouselRow {
     created_at: (c.createdAt as Date).toISOString(),
     template_piece_id: (c.templatePieceId as number) ?? null,
     dark_mode: (c.darkMode as boolean) ?? true,
+    slide_image_urls: parseImageUrls(c.slideImageUrls as string | null),
+  }
+}
+
+function parseImageUrls(raw: string | null): string[] {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    return Array.isArray(parsed) ? (parsed as string[]) : []
+  } catch {
+    return raw.split(',').map(u => u.trim()).filter(Boolean)
   }
 }
 

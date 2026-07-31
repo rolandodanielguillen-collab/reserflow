@@ -28,7 +28,7 @@ export function Modal({ piece, dark, onClose, onStatusChange }: {
   const [feedback, setFeedback] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null)
 
   const uiStatus = dbToUI(piece.dbStatus)
-  const total    = piece.type === 'carousel' ? (piece.slides?.length ?? 0) : 1
+  const total    = piece.type === 'carousel' ? (piece.slides?.length ?? piece.imageUrls?.length ?? 0) : 1
 
   // Use piece's own darkMode for rendering slides; UI chrome follows global dark
   const slideDark = piece.darkMode
@@ -81,8 +81,8 @@ export function Modal({ piece, dark, onClose, onStatusChange }: {
   function handleSchedule() {
     if (!schedInput) return
     const isVideo = piece.type === 'video' && !!piece.script
-    if (!piece.slides?.length && !isVideo) {
-      setFeedback({ type: 'err', msg: 'Este carrusel no tiene slides. Editalo antes de programar.' })
+    if (!piece.slides?.length && !piece.imageUrls?.length && !isVideo) {
+      setFeedback({ type: 'err', msg: 'Este carrusel no tiene slides ni imágenes. Editalo antes de programar.' })
       return
     }
     const date = argInputToDate(schedInput)
@@ -147,6 +147,9 @@ export function Modal({ piece, dark, onClose, onStatusChange }: {
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, position: 'relative' }}>
             {piece.type === 'carousel' && piece.slides ? (
               <ScaledSlide slide={piece.slides[idx]!} dark={slideDark} index={idx} total={total} width={420}/>
+            ) : piece.type === 'carousel' && piece.imageUrls?.length ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={piece.imageUrls[idx]} alt="" style={{ width: 420, maxHeight: 525, objectFit: 'contain', borderRadius: 8, display: 'block' }}/>
             ) : (
               <VideoPreview dark={slideDark} width={420} scriptId={piece.script}/>
             )}
@@ -163,6 +166,16 @@ export function Modal({ piece, dark, onClose, onStatusChange }: {
               {piece.slides.map((s, i) => (
                 <button key={i} onClick={() => setIdx(i)} style={{ all: 'unset', cursor: 'pointer', borderRadius: 7, overflow: 'hidden', outline: i === idx ? `2.5px solid ${T.mint}` : 'none', outlineOffset: 2, flexShrink: 0, transition: 'outline 160ms' }}>
                   <ScaledSlide slide={s} dark={slideDark} index={i} total={total} width={64}/>
+                </button>
+              ))}
+            </div>
+          )}
+          {piece.type === 'carousel' && !piece.slides && (piece.imageUrls?.length ?? 0) > 1 && (
+            <div style={{ marginTop: 20, display: 'flex', gap: 8, overflowX: 'auto', padding: '4px 2px' }}>
+              {piece.imageUrls!.map((u, i) => (
+                <button key={i} onClick={() => setIdx(i)} style={{ all: 'unset', cursor: 'pointer', borderRadius: 7, overflow: 'hidden', outline: i === idx ? `2.5px solid ${T.mint}` : 'none', outlineOffset: 2, flexShrink: 0, transition: 'outline 160ms' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={u} alt="" style={{ width: 64, height: 80, objectFit: 'cover', display: 'block' }}/>
                 </button>
               ))}
             </div>

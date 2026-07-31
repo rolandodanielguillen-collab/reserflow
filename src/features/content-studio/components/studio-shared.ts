@@ -69,4 +69,5 @@ export type RichPiece = ContentPiece & {
   caption?: string | null
   isTemplate: boolean
   darkMode: boolean
+  imageUrls?: string[] // carruseles desde biblioteca/flyers: las imágenes SON los slides
 }

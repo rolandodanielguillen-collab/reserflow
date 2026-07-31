@@ -36,7 +36,7 @@ export function missingFields(data: ExtractedFlyer): Array<{ key: keyof Extracte
   })
 }
 
-async function openai(body: Record<string, unknown>, timeoutMs = 60000): Promise<string | null> {
+export async function openaiChat(body: Record<string, unknown>, timeoutMs = 60000): Promise<string | null> {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) throw new Error('OPENAI_API_KEY no configurada')
 
@@ -92,7 +92,7 @@ REGLAS ESTRICTAS:
 /** GPT-4o Vision: extrae los datos estructurados del flyer (imagen en base64). */
 export async function analyzeFlyer(imageBase64: string): Promise<ExtractedFlyer | null> {
   const clean = imageBase64.replace(/^data:image\/\w+;base64,/, '')
-  const content = await openai({
+  const content = await openaiChat({
     model: 'gpt-4o',
     max_tokens: 1000,
     temperature: 0,
@@ -126,7 +126,7 @@ export async function generateCaption(data: ExtractedFlyer): Promise<string> {
   const prizes = (data.prizes ?? []).map(p => `${p.category ?? ''}: ${p.champion_prize ?? ''}`).join(' | ')
   const price = data.price_per_person ? `${data.price_per_person} ${data.currency ?? ''}` : ''
 
-  const content = await openai({
+  const content = await openaiChat({
     model: 'gpt-4o-mini',
     max_tokens: 500,
     temperature: 0.8,
@@ -171,7 +171,7 @@ Devuelve SOLO el caption, sin explicaciones ni comillas.`,
 /** GPT-4o-mini: limpia la respuesta del operador a una pregunta de campo faltante. */
 export async function cleanFieldValue(fieldKey: string, question: string, answer: string): Promise<string> {
   const isDate = fieldKey.includes('date')
-  const content = await openai({
+  const content = await openaiChat({
     model: 'gpt-4o-mini',
     max_tokens: 60,
     temperature: 0,
