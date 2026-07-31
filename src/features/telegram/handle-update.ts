@@ -80,7 +80,8 @@ export async function handleTelegramUpdate(update: TgUpdate): Promise<void> {
 
 // ── /start CODIGO — vinculación por tenant ────────────────────────────────
 async function handleStart(chatId: string, text: string) {
-  const code = text.replace('/start', '').trim()
+  // Tolerante a pegadas con texto extra: solo el primer token tipo código
+  const code = (text.replace(/\/start/g, ' ').match(/[A-Fa-f0-9]{8}/)?.[0] ?? '').toUpperCase()
   if (code) {
     const brand = await prismaAdmin.brandSettings.findFirst({ where: { telegramLinkCode: code } })
     if (brand) {
