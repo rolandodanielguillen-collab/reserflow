@@ -1,11 +1,11 @@
 import path from "path"
 import os from "os"
 import fs from "fs"
-import { bundle } from "@remotion/bundler"
 import { renderMedia, selectComposition } from "@remotion/renderer"
 import Ffmpeg from "fluent-ffmpeg"
 import ffmpegPath from "ffmpeg-static"
 import { uploadFile } from "@/lib/storage"
+import { getRemotionBundle } from "./remotion-bundle"
 
 function convertWebmToMp4(webmPath: string, mp4Path: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -27,21 +27,13 @@ export async function renderReelToFile(opts: {
   carouselId: string
   userId: string
 }): Promise<{ url: string } | { error: string }> {
-  const entryPoint = path.resolve(
-    process.cwd(),
-    "src/features/content-studio/remotion/index.ts"
-  )
-
   const ts = Date.now()
   const webmPath = path.join(os.tmpdir(), `reel-${opts.carouselId}-${ts}.webm`)
   const mp4Path = path.join(os.tmpdir(), `reel-${opts.carouselId}-${ts}.mp4`)
 
   try {
     console.log("[render-reel] bundling...")
-    const serveUrl = await bundle({
-      entryPoint,
-      webpackOverride: (cfg) => cfg,
-    })
+    const serveUrl = await getRemotionBundle()
 
     const inputProps = { scriptId: opts.scriptId, dark: opts.dark, cta: opts.cta }
     const composition = await selectComposition({

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useTransition, useRef } from 'react'
+import { useState, useEffect, useCallback, useTransition } from 'react'
 import Link from 'next/link'
 import { CONTENT } from '../content'
 import type { ContentPiece, DesignSlide } from '../types'
@@ -8,9 +8,8 @@ import { ScaledSlide, VideoPreview } from './SlideCanvas'
 import { getCarousels } from '../services/get-carousels'
 import { seedMayCalendar, resetAllToDraft, fixDarkModeAlternation } from '../services/seed-content-calendar'
 import { setCarouselStatus } from '../services/set-carousel-status'
-import { publishCarouselNow, publishCarouselWithImages } from '../services/update-carousel-status'
-import { captureAndUploadSlides } from '../services/capture-slides'
-import { triggerPublishDuePosts } from '../services/trigger-publish'
+import { publishCarouselNow } from '../services/update-carousel-status'
+import { runDuePublishes } from '@/features/scheduler/services/publish-due-action'
 type RecordPhase = 'idle' | 'recording' | 'uploading'
 
 // ── Design tokens ─────────────────────────────────────────────────────────
@@ -398,7 +397,7 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
 }) {
   const [idx, setIdx] = useState(0)
   const [isPending, startTransition] = useTransition()
-  const [capturing, setCapturing] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   const [recordPhase, setRecordPhase] = useState<RecordPhase>('idle')
   const [recordPct, setRecordPct] = useState(0)
   const [showScheduler, setShowScheduler] = useState(false)
@@ -406,7 +405,6 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
     piece.scheduledAt ? utcISOToLocalInput(piece.scheduledAt) : ''
   )
   const [feedback, setFeedback] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null)
-  const slideContainerRef = useRef<HTMLDivElement>(null)
 
   const uiStatus = dbToUI(piece.dbStatus)
   const total    = piece.type === 'carousel' ? (piece.slides?.length ?? 0) : 1
@@ -470,30 +468,10 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
     startTransition(async () => {
       setFeedback(null)
 
-      let slideImageUrls: string[] = []
-
-      if (!isVideo && piece.slides?.length) {
-        setFeedback({ type: 'ok', msg: 'Capturando slides...' })
-        if (slideContainerRef.current) {
-          try {
-            const slideEls = slideContainerRef.current.querySelectorAll<HTMLElement>('[data-slide-capture]')
-            slideImageUrls = await captureAndUploadSlides(Array.from(slideEls), piece.dbId, 'user')
-          } catch {
-            setFeedback({ type: 'err', msg: 'Error capturando slides. Intentá de nuevo.' })
-            return
-          }
-        }
-        if (slideImageUrls.length === 0) {
-          setFeedback({ type: 'err', msg: 'No se pudieron capturar las imágenes de los slides. Intentá de nuevo.' })
-          return
-        }
-      }
-
       setFeedback({ type: 'ok', msg: 'Programando...' })
       const schedBody: Record<string, unknown> = {
         carouselId: piece.dbId,
         scheduledAt: date.toISOString(),
-        slideImageUrls,
         darkMode: slideDark,
       }
       if (isVideo) {
@@ -531,17 +509,7 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
         style={{ width: '100%', maxWidth: 1280, background: panelBg, margin: 24, borderRadius: 24, overflow: 'hidden', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 340px', boxShadow: '0 40px 100px rgba(0,0,0,0.6)' }}
       >
         {/* Preview */}
-        <div ref={slideContainerRef} style={{ background: slideDark ? '#05080F' : '#EAE5D8', padding: 40, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
-          {/* Hidden full-size slides for capture */}
-          {piece.slides && piece.slides.length > 0 && (
-            <div style={{ position: 'absolute', left: -9999, top: -9999, pointerEvents: 'none', display: 'flex', flexDirection: 'column' }}>
-              {piece.slides.map((s, i) => (
-                <div key={i} data-slide-capture="true" style={{ width: 1080, height: 1350, flexShrink: 0 }}>
-                  <ScaledSlide slide={s} dark={slideDark} index={i} total={piece.slides!.length} width={1080} forCapture={true}/>
-                </div>
-              ))}
-            </div>
-          )}
+        <div style={{ background: slideDark ? '#05080F' : '#EAE5D8', padding: 40, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, color: ink }}>
             <div style={{ fontFamily: FM, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.5 }}>
               {piece.type === 'carousel' ? `Slide ${idx + 1} / ${total}` : 'Video 10s · loop'}
@@ -764,33 +732,27 @@ function Modal({ piece, dark, onClose, onStatusChange }: {
               </div>
             ) : (
               <button
-                disabled={isPending || capturing}
+                disabled={isPending || publishing}
                 onClick={async () => {
-                  if (piece.slides?.length && slideContainerRef.current) {
-                    setCapturing(true)
-                    setFeedback(null)
-                    try {
-                      const slideEls = slideContainerRef.current.querySelectorAll<HTMLElement>('[data-slide-capture]')
-                      const urls = await captureAndUploadSlides(Array.from(slideEls), piece.dbId, 'user')
-                      const result = await publishCarouselWithImages(piece.dbId, urls)
-                      if ('error' in result && result.error) {
-                        setFeedback({ type: 'err', msg: result.error })
-                      } else {
-                        setFeedback({ type: 'ok', msg: 'Publicado en Instagram ✓' })
-                        onStatusChange(piece.dbId, 'published')
-                      }
-                    } catch (e) {
-                      setFeedback({ type: 'err', msg: e instanceof Error ? e.message : 'Error capturando slides' })
-                    } finally {
-                      setCapturing(false)
+                  setPublishing(true)
+                  setFeedback({ type: 'ok', msg: 'Renderizando y publicando... (~1 min)' })
+                  try {
+                    const result = await publishCarouselNow(piece.dbId)
+                    if ('error' in result && result.error) {
+                      setFeedback({ type: 'err', msg: result.error })
+                    } else {
+                      setFeedback({ type: 'ok', msg: 'Publicado en Instagram ✓' })
+                      onStatusChange(piece.dbId, 'published')
                     }
-                  } else {
-                    run(() => publishCarouselNow(piece.dbId), () => onStatusChange(piece.dbId, 'published'))
+                  } catch (e) {
+                    setFeedback({ type: 'err', msg: e instanceof Error ? e.message : 'Error publicando' })
+                  } finally {
+                    setPublishing(false)
                   }
                 }}
-                style={{ all: 'unset', cursor: (isPending || capturing) ? 'wait' : 'pointer', width: '100%', padding: '12px 14px', borderRadius: 10, background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(15,30,61,0.05)', border: `1.5px solid ${dark ? 'rgba(255,255,255,0.09)' : 'rgba(15,30,61,0.09)'}`, color: ink, fontFamily: FD, fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 9, boxSizing: 'border-box' as const, opacity: (isPending || capturing) ? 0.5 : 1 }}
+                style={{ all: 'unset', cursor: (isPending || publishing) ? 'wait' : 'pointer', width: '100%', padding: '12px 14px', borderRadius: 10, background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(15,30,61,0.05)', border: `1.5px solid ${dark ? 'rgba(255,255,255,0.09)' : 'rgba(15,30,61,0.09)'}`, color: ink, fontFamily: FD, fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 9, boxSizing: 'border-box' as const, opacity: (isPending || publishing) ? 0.5 : 1 }}
               >
-                <span>⚡</span> {capturing ? 'Capturando slides...' : 'Publicar ahora en Instagram'}
+                <span>⚡</span> {publishing ? 'Renderizando y publicando...' : 'Publicar ahora en Instagram'}
               </button>
             )}
           </div>
@@ -911,7 +873,6 @@ export function ContentStudio() {
   const [pieces, setPieces]             = useState<RichPiece[]>([])
   const [seeding, setSeeding]           = useState(false)
   const [loading, setLoading]           = useState(true)
-  const autoTriggeredRef                = useRef(false)
 
   // Calendar navigation: start at May 2026
   const [calYear, setCalYear]   = useState(2026)
@@ -959,22 +920,6 @@ export function ContentStudio() {
     loadPieces()
   }, [])
 
-  // Auto-publicar posts vencidos al cargar el Content Studio
-  useEffect(() => {
-    if (loading || pieces.length === 0 || autoTriggeredRef.current) return
-    const now = new Date()
-    const hasDue = pieces.some(p =>
-      p.dbStatus === 'scheduled' &&
-      p.scheduledAt &&
-      new Date(p.scheduledAt) <= now
-    )
-    if (!hasDue) return
-    autoTriggeredRef.current = true
-    triggerPublishDuePosts()
-      .then(result => { if (result.processed > 0) loadPieces() })
-      .catch(() => {})
-  }, [loading, pieces])
-
   const toggleDark = useCallback(() => {
     setDark(d => { const next = !d; localStorage.setItem('reser-cs-dark', String(next)); return next })
   }, [])
@@ -995,9 +940,11 @@ export function ContentStudio() {
   }
 
   async function handleTriggerCron() {
-    const result = await triggerPublishDuePosts()
-    if (result.error) {
-      alert(`Sin posts para publicar: ${result.error}`)
+    const result = await runDuePublishes()
+    if ('error' in result) {
+      alert(`Error: ${result.error}`)
+    } else if (result.processed === 0 && result.failed === 0) {
+      alert('Sin posts vencidos para publicar.')
     } else {
       alert(`✅ Publicados: ${result.processed}\n${result.results.map(r => `• ${r.status}: ${r.reason ?? r.postId ?? ''}`).join('\n')}`)
       await loadPieces()

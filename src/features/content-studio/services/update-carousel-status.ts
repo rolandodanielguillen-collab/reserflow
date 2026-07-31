@@ -4,7 +4,8 @@ import { prismaRls } from '@/lib/prisma-rls'
 import { auth } from '@/lib/auth'
 import { publishToInstagram } from '@/features/scheduler/services/instagram-publish'
 import { sendApprovalRequest, notifyPublished, notifyPublishFailed } from '@/features/notifications/services/ycloud'
-import { renderCarouselCover } from '@/features/generation/services/render-slide'
+import { renderSlideImages } from '@/features/publishing/services/render-slides'
+import { normalizeSlides } from '@/features/content-studio/slide-utils'
 
 export async function approveCarousel(carouselId: string) {
   const session = await auth()
@@ -81,74 +82,47 @@ export async function requestWhatsAppApproval(carouselId: string) {
 }
 
 /**
- * Publica con URLs de imágenes capturadas desde el cliente (html2canvas).
- * Llamado desde el Modal después de capturar los slides reales.
+ * Publica el carrusel COMPLETO ahora: renderiza todos los slides server-side
+ * con Remotion (mismo componente que el preview) y publica via Graph API.
  */
-export async function publishCarouselWithImages(carouselId: string, imageUrls: string[]) {
-  const session = await auth()
-  if (!session?.user?.id) return { error: 'No autenticado' }
-
-  if (!imageUrls.length) return { error: 'Sin imágenes para publicar' }
-
-  const carousel = await prismaRls.carousel.findFirst({
-    where: { id: carouselId },
-    select: { title: true, caption: true },
-  })
-
-  if (!carousel) return { error: 'Carrusel no encontrado' }
-
-  const result = await publishToInstagram({
-    carouselId,
-    imageUrls,
-    caption: carousel.caption ?? carousel.title,
-  })
-
-  const brand = await prismaRls.brandSettings.findFirst({
-    where: {},
-    select: { whatsappPhone: true },
-  })
-
-  const phone = brand?.whatsappPhone as string | undefined
-  if (phone) {
-    if ('error' in result && result.error) {
-      await notifyPublishFailed(carousel.title, result.error, phone).catch(() => {})
-    } else if ('permalink' in result && result.permalink) {
-      await notifyPublished(carousel.title, result.permalink, phone).catch(() => {})
-    }
-  }
-
-  return result
-}
-
 export async function publishCarouselNow(carouselId: string) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'No autenticado' }
 
   const carousel = await prismaRls.carousel.findFirst({
     where: { id: carouselId },
-    select: { title: true, caption: true, coverImageUrl: true, slidesJson: true },
+    select: { title: true, caption: true, slidesJson: true, darkMode: true, slideImageUrls: true },
   })
 
   if (!carousel) return { error: 'Carrusel no encontrado' }
 
-  const imageUrls: string[] = []
-  if (carousel.coverImageUrl) {
-    imageUrls.push(carousel.coverImageUrl)
-  }
+  let imageUrls: string[] = []
 
-  // No cover image → render first slide server-side
-  if (imageUrls.length === 0 && carousel.slidesJson) {
-    const rendered = await renderCarouselCover(
-      carouselId,
-      session.user.id,
-      carousel.title,
-      carousel.slidesJson
-    )
-    if (rendered) imageUrls.push(rendered)
+  // Imágenes ya renderizadas (o subidas a mano) → usarlas
+  if (carousel.slideImageUrls) {
+    try {
+      const parsed = JSON.parse(carousel.slideImageUrls) as string[]
+      if (Array.isArray(parsed)) imageUrls = parsed
+    } catch { /* formato viejo → re-render abajo */ }
   }
 
   if (imageUrls.length === 0) {
-    return { error: 'No se pudo generar la imagen. Verifica la configuración de almacenamiento.' }
+    const slides = normalizeSlides(carousel.slidesJson)
+    if (slides.length === 0) {
+      return { error: 'Este carrusel no tiene slides para renderizar.' }
+    }
+    const rendered = await renderSlideImages({
+      carouselId,
+      userId: session.user.id,
+      slides,
+      dark: carousel.darkMode,
+    })
+    if ('error' in rendered) return { error: `Render: ${rendered.error}` }
+    imageUrls = rendered.urls
+    await prismaRls.carousel.updateMany({
+      where: { id: carouselId },
+      data: { slideImageUrls: JSON.stringify(imageUrls) },
+    })
   }
 
   const result = await publishToInstagram({

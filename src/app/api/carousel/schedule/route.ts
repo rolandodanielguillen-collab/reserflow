@@ -11,13 +11,12 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     carouselId?: string
     scheduledAt?: string
-    slideImageUrls?: string[]
     videoUrl?: string
     publishFormat?: "carousel" | "reel"
     reelScriptId?: string
     darkMode?: boolean
   }
-  const { carouselId, scheduledAt, slideImageUrls, videoUrl, publishFormat, reelScriptId, darkMode } = body
+  const { carouselId, scheduledAt, videoUrl, publishFormat, reelScriptId, darkMode } = body
 
   if (!carouselId || !scheduledAt) {
     return NextResponse.json(
@@ -31,23 +30,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "scheduledAt inválido" }, { status: 400 })
   }
 
-  const hasImages = slideImageUrls && slideImageUrls.length > 0
   const hasVideo = !!videoUrl
   const isReel = publishFormat === "reel" || hasVideo
 
-  if (!hasImages && !hasVideo && !isReel) {
+  // El render de slides es server-side al publicar (Remotion); acá solo
+  // validamos que haya contenido renderizable.
+  if (!isReel) {
     const existing = await prismaAdmin.carousel.findFirst({
       where: { id: carouselId, userId: session.user.id },
-      select: { slidesJson: true },
+      select: { slidesJson: true, slideImageUrls: true },
     })
 
     const slides = existing?.slidesJson as unknown[] | null
-    if (!slides || (Array.isArray(slides) && slides.length === 0)) {
+    const hasStoredImages = !!existing?.slideImageUrls && existing.slideImageUrls !== "[]"
+    if (!hasStoredImages && (!slides || (Array.isArray(slides) && slides.length === 0))) {
       return NextResponse.json(
-        {
-          error:
-            "No se puede programar: el carrusel no tiene slides ni imágenes capturadas. Editá el carrusel primero.",
-        },
+        { error: "No se puede programar: el carrusel no tiene slides. Editá el carrusel primero." },
         { status: 400 }
       )
     }
@@ -58,7 +56,6 @@ export async function POST(request: Request) {
     data: {
       status: "scheduled",
       scheduledAt: scheduledDate,
-      slideImageUrls: hasImages ? JSON.stringify(slideImageUrls) : "[]",
       videoUrl: hasVideo ? videoUrl : null,
       publishFormat: isReel ? "reel" : "carousel",
       reelScriptId: reelScriptId ?? null,
