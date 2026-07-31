@@ -4,6 +4,7 @@
 
 import type { DesignSlide, EventFlyerData, PaletteTokens } from '@/features/content-studio/types'
 import { getPaletteByColor, DEFAULT_PALETTE } from '@/features/design/palettes'
+import { ensureReadableText } from '@/features/design/contrast'
 
 const OPENAI_BASE = 'https://api.openai.com/v1'
 
@@ -240,11 +241,13 @@ export function buildEventSlides(
   const paletteFull = opts?.palette
     ? { id: 'custom', name: 'Custom', ...opts.palette }
     : (data.primary_color ? getPaletteByColor(data.primary_color) : DEFAULT_PALETTE)
+  // Contraste WCAG garantizado: si el texto no llega a AA sobre el fondo,
+  // se reemplaza por blanco/negro según convenga.
   const palette: PaletteTokens = {
     background: paletteFull.background,
     primary: paletteFull.primary,
     accent: paletteFull.accent,
-    text: paletteFull.text,
+    text: ensureReadableText(paletteFull.background, paletteFull.text),
   }
 
   const phone = (data.contact_phone ?? '').replace(/-+/g, ' ').trim()

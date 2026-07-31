@@ -9,7 +9,7 @@ import {
   analyzeFlyer, generateCaption, cleanFieldValue, buildEventSlides,
   missingFields, type ExtractedFlyer,
 } from '@/features/ingest/flyer-ingest'
-import { pickPlayerImage } from '@/features/ingest/player-image'
+import { pickBackgroundImage } from '@/features/ingest/player-image'
 import { renderSlideImages } from '@/features/publishing/services/render-slides'
 import { publishToInstagram } from '@/features/scheduler/services/instagram-publish'
 import { tgSendMessage, tgSendMediaGroup, tgAnswerCallback, tgDownloadFile } from './telegram'
@@ -165,10 +165,10 @@ async function processFlyer(chatId: string, fileId: string, brandSettingsId: str
 }
 
 // ── Generación de slides + preview con botones ────────────────────────────
-async function generateAndSendPreview(chatId: string, carouselId: string) {
+async function generateAndSendPreview(chatId: string, carouselId: string, opts?: { excludeBgUrl?: string }) {
   const carousel = await prismaAdmin.carousel.findUnique({
     where: { id: carouselId },
-    select: { id: true, userId: true, extractedJson: true },
+    select: { id: true, userId: true, extractedJson: true, caption: true },
   })
   if (!carousel) return
   const extracted = (carousel.extractedJson ?? {}) as ExtractedFlyer
@@ -180,7 +180,14 @@ async function generateAndSendPreview(chatId: string, carouselId: string) {
 
   await tgSendMessage(chatId, '🎨 Generando el diseño... (~1 min)')
 
-  const playerImageUrl = await pickPlayerImage(carousel.userId)
+  const playerImageUrl = await pickBackgroundImage(carousel.userId, {
+    paletteHex: extracted.primary_color ?? undefined,
+    excludeUrl: opts?.excludeBgUrl,
+  })
+  if (opts?.excludeBgUrl && !playerImageUrl) {
+    await tgSendMessage(chatId, 'No hay más fondos en la biblioteca para alternar. Subí más imágenes con etiqueta "jugador".')
+    return
+  }
   const igHandle = brand?.brandName ? `@${brand.brandName.toLowerCase().replace(/[^a-z0-9_.]/g, '')}` : undefined
   const slides = buildEventSlides(extracted, {
     brandName: brand?.brandName,
@@ -188,7 +195,7 @@ async function generateAndSendPreview(chatId: string, carouselId: string) {
     igHandle,
   }, { playerImageUrl })
 
-  const caption = await generateCaption(extracted)
+  const caption = carousel.caption ?? await generateCaption(extracted)
 
   await prismaAdmin.carousel.update({
     where: { id: carouselId },
@@ -218,13 +225,15 @@ async function generateAndSendPreview(chatId: string, carouselId: string) {
   })
 
   await tgSendMediaGroup(chatId, rendered.urls, caption)
-  await tgSendMessage(chatId, '¿Qué hacemos con esta publicación?', [
+  const keyboard = [
     [{ text: '✅ Aprobar y publicar', callback_data: `approve:${carouselId}` }],
     [
       { text: '📅 Programar', callback_data: `schedule:${carouselId}` },
       { text: '❌ Rechazar', callback_data: `reject:${carouselId}` },
     ],
-  ])
+  ]
+  if (playerImageUrl) keyboard.push([{ text: '🖼 Cambiar fondo', callback_data: `bg:${carouselId}` }])
+  await tgSendMessage(chatId, '¿Qué hacemos con esta publicación?', keyboard)
   await setState(chatId, null)
 }
 
@@ -345,6 +354,21 @@ async function handleCallback(cb: NonNullable<TgUpdate['callback_query']>) {
     await tgAnswerCallback(cb.id)
     await setState(chatId, { mode: 'awaiting_schedule', carouselId: id })
     await tgSendMessage(chatId, '¿Para cuándo lo programo? Formato: <code>dd/mm hh:mm</code> (hora AR/PY)')
+    return
+  }
+
+  if (action === 'bg') {
+    await tgAnswerCallback(cb.id, 'Cambiando fondo...')
+    const carousel = await prismaAdmin.carousel.findUnique({
+      where: { id },
+      select: { slidesJson: true },
+    })
+    let currentBg: string | undefined
+    if (Array.isArray(carousel?.slidesJson)) {
+      const first = (carousel.slidesJson as Array<{ data?: { playerImageUrl?: string } }>)[0]
+      currentBg = first?.data?.playerImageUrl
+    }
+    await generateAndSendPreview(chatId, id, { excludeBgUrl: currentBg })
     return
   }
 
