@@ -5,7 +5,11 @@
 // vista previa instantánea · publicar / programar / mandar a aprobación.
 
 import { useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { EventIntroScene } from '@/features/content-studio/components/EventIntroScene'
 import { T, FD, FM, ARG_TZ, STATUS_META, dbToUI, argInputToDate, utcISOToLocalInput } from '@/features/content-studio/components/studio-shared'
+
+const RemotionPlayer = dynamic(() => import('@remotion/player').then(m => m.Player), { ssr: false })
 import { ScaledSlide } from '@/features/content-studio/components/SlideCanvas'
 import { PALETTES } from '@/features/design/palettes'
 import { updateEventDesign, listLibraryImagesForPicker } from '@/features/content-studio/services/event-design'
@@ -23,9 +27,12 @@ type Busy = null | 'guardar' | 'publicar' | 'programar' | 'aprobar'
 
 export function FlyerEditor() {
   const [pieces, setPieces] = useState<FlyerPiece[]>([])
+  const [closingVideoUrl, setClosingVideoUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [selId, setSelId] = useState<string | null>(null)
   const [slideIdx, setSlideIdx] = useState(0)
+  const [view, setView] = useState<'slides' | 'anim'>('slides')
+  const [flyerZoom, setFlyerZoom] = useState(false)
 
   // Diseño en edición (preview instantáneo, se persiste con Guardar)
   const [paletteId, setPaletteId] = useState<string | null>(null)
@@ -46,9 +53,10 @@ export function FlyerEditor() {
 
   async function refresh(keepSel = true) {
     setLoading(true)
-    const rows = await getFlyerPieces()
-    setPieces(rows)
-    if (!keepSel || !rows.some(r => r.id === selId)) setSelId(rows[0]?.id ?? null)
+    const data = await getFlyerPieces()
+    setPieces(data.pieces)
+    setClosingVideoUrl(data.closingVideoUrl)
+    if (!keepSel || !data.pieces.some(r => r.id === selId)) setSelId(data.pieces[0]?.id ?? null)
     setLoading(false)
   }
   useEffect(() => { refresh(false); listLibraryImagesForPicker().then(setImages) }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -225,28 +233,93 @@ export function FlyerEditor() {
                   {sel.permalink && <> · <a href={sel.permalink} target="_blank" rel="noopener noreferrer" style={{ color: T.mint }}>Ver en Instagram ↗</a></>}
                 </div>
               </div>
-              <div style={{ fontFamily: FM, fontSize: 10, color: INK_SOFT }}>Slide {slideIdx + 1}/{total}</div>
+              {/* Tabs Láminas / Animación */}
+              <div style={{ display: 'flex', gap: 2, padding: 3, background: 'rgba(245,242,235,0.06)', borderRadius: 9 }}>
+                {([['slides', 'Láminas'], ['anim', '▶ Animación']] as const).map(([v, label]) => (
+                  <button key={v} onClick={() => setView(v)} style={{ all: 'unset', cursor: 'pointer', padding: '6px 14px', borderRadius: 7, fontFamily: FD, fontSize: 12, fontWeight: 600, background: view === v ? T.navySoft : 'transparent', color: view === v ? T.mint : INK_SOFT, transition: 'all 160ms' }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 70px rgba(0,0,0,0.5)', border: `1px solid ${LINE}` }}>
-              {liveSlides[slideIdx] && (
-                <ScaledSlide slide={liveSlides[slideIdx]!} dark index={slideIdx} total={total} width={520}/>
-              )}
-              {total > 1 && (
-                <>
-                  <button onClick={() => setSlideIdx(i => Math.max(0, i - 1))} disabled={slideIdx === 0} style={{ all: 'unset', cursor: slideIdx === 0 ? 'default' : 'pointer', position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: 20, background: 'rgba(0,0,0,0.55)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, opacity: slideIdx === 0 ? 0.3 : 1 }}>‹</button>
-                  <button onClick={() => setSlideIdx(i => Math.min(total - 1, i + 1))} disabled={slideIdx === total - 1} style={{ all: 'unset', cursor: slideIdx === total - 1 ? 'default' : 'pointer', position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: 20, background: 'rgba(0,0,0,0.55)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, opacity: slideIdx === total - 1 ? 0.3 : 1 }}>›</button>
-                </>
-              )}
-            </div>
+            {view === 'slides' ? (
+              <>
+                <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 70px rgba(0,0,0,0.5)', border: `1px solid ${LINE}` }}>
+                  {liveSlides[slideIdx] && (
+                    <ScaledSlide slide={liveSlides[slideIdx]!} dark index={slideIdx} total={total} width={520}/>
+                  )}
+                  {total > 1 && (
+                    <>
+                      <button onClick={() => setSlideIdx(i => Math.max(0, i - 1))} disabled={slideIdx === 0} style={{ all: 'unset', cursor: slideIdx === 0 ? 'default' : 'pointer', position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: 20, background: 'rgba(0,0,0,0.55)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, opacity: slideIdx === 0 ? 0.3 : 1 }}>‹</button>
+                      <button onClick={() => setSlideIdx(i => Math.min(total - 1, i + 1))} disabled={slideIdx === total - 1} style={{ all: 'unset', cursor: slideIdx === total - 1 ? 'default' : 'pointer', position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: 20, background: 'rgba(0,0,0,0.55)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, opacity: slideIdx === total - 1 ? 0.3 : 1 }}>›</button>
+                    </>
+                  )}
+                </div>
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-              {liveSlides.map((s, i) => (
-                <button key={i} onClick={() => setSlideIdx(i)} style={{ all: 'unset', cursor: 'pointer', borderRadius: 6, overflow: 'hidden', outline: i === slideIdx ? `2.5px solid ${T.mint}` : `1px solid ${LINE}`, outlineOffset: 2 }}>
-                  <ScaledSlide slide={s} dark index={i} total={total} width={56}/>
-                </button>
-              ))}
-            </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                  {liveSlides.map((s, i) => (
+                    <button key={i} onClick={() => setSlideIdx(i)} style={{ all: 'unset', cursor: 'pointer', borderRadius: 6, overflow: 'hidden', outline: i === slideIdx ? `2.5px solid ${T.mint}` : `1px solid ${LINE}`, outlineOffset: 2 }}>
+                      <ScaledSlide slide={s} dark index={i} total={total} width={56}/>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Animación de portada en vivo (con las ediciones actuales) */}
+                <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 70px rgba(0,0,0,0.5)', border: `1px solid ${LINE}`, width: 520, height: 650 }}>
+                  {liveSlides.length >= 2 ? (
+                    <RemotionPlayer
+                      component={EventIntroScene as React.ComponentType<Record<string, unknown>>}
+                      inputProps={{ slide1: liveSlides[0]!, slide2: liveSlides[1]! }}
+                      durationInFrames={300}
+                      fps={30}
+                      compositionWidth={1080}
+                      compositionHeight={1350}
+                      controls
+                      loop
+                      autoPlay
+                      style={{ width: 520, height: 650 }}
+                    />
+                  ) : (
+                    <div style={{ width: 520, height: 650, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 11, color: INK_SOFT }}>
+                      Esta pieza no tiene los 2 slides de la animación
+                    </div>
+                  )}
+                </div>
+                <div style={{ fontFamily: FM, fontSize: 9.5, color: INK_SOFT, marginTop: 10 }}>
+                  Así sale la portada animada (10s) como primer elemento del carrusel — refleja tus ediciones al instante
+                </div>
+
+                {closingVideoUrl && (
+                  <div style={{ marginTop: 18, width: 520 }}>
+                    <div style={{ fontFamily: FM, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: INK_SOFT, fontWeight: 700, marginBottom: 8 }}>Video de cierre (último elemento)</div>
+                    <video src={closingVideoUrl} controls preload="metadata" style={{ width: 240, borderRadius: 12, border: `1px solid ${LINE}`, display: 'block' }}/>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Flyer original de referencia — esquina */}
+            {sel.sourceFlyerUrl && (
+              <button
+                onClick={() => setFlyerZoom(true)}
+                title="Flyer original (referencia)"
+                style={{ all: 'unset', cursor: 'zoom-in', position: 'fixed', right: 350, bottom: 20, zIndex: 40, borderRadius: 10, overflow: 'hidden', border: `2px solid ${T.amber}88`, boxShadow: '0 10px 30px rgba(0,0,0,0.55)', background: T.navySoft }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={sel.sourceFlyerUrl} alt="Flyer original" style={{ width: 110, display: 'block' }}/>
+                <div style={{ fontFamily: FM, fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.amber, textAlign: 'center', padding: '4px 0' }}>Original ⤢</div>
+              </button>
+            )}
+            {flyerZoom && sel.sourceFlyerUrl && (
+              <div onClick={() => setFlyerZoom(false)} style={{ position: 'fixed', inset: 0, zIndex: 120, background: 'rgba(10,21,41,0.93)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={sel.sourceFlyerUrl} alt="Flyer original" style={{ maxHeight: '92vh', maxWidth: '92vw', borderRadius: 12 }}/>
+                <div style={{ position: 'fixed', top: 18, left: '50%', transform: 'translateX(-50%)', fontFamily: FM, fontSize: 11, color: T.amber, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Flyer original — click para cerrar</div>
+              </div>
+            )}
 
             {dirty && (
               <div style={{ marginTop: 14, fontFamily: FM, fontSize: 10, color: T.amber }}>
