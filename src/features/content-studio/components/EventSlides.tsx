@@ -46,6 +46,20 @@ function Frame({ bw, bc }: { bw: number; bc: string }) {
   return <div style={{ position: 'absolute', inset: 20, border: `${bw}px solid ${bc}`, borderRadius: 18, pointerEvents: 'none' }}/>
 }
 
+// Glow blob con radial-gradient en vez de filter:blur — visualmente casi
+// idéntico y ~100x más barato en el render por software del servidor
+// (blur(140px) recalculado en 300 frames hacía tardar 25+ min el video).
+function Glow({ color, opacity, style }: { color: string; opacity: number; style: React.CSSProperties }) {
+  return (
+    <div style={{
+      position: 'absolute', borderRadius: '50%',
+      background: `radial-gradient(circle, ${color} 0%, transparent 62%)`,
+      opacity: Math.min(1, opacity * 1.4),
+      ...style,
+    }}/>
+  )
+}
+
 function Header({ data, txt, num }: { data: EventFlyerData; txt: string; num: string }) {
   const yr = data.year || String(new Date().getFullYear())
   return (
@@ -93,7 +107,7 @@ export function EventSlide1({ data, palette }: SlideBaseProps) {
 
   return (
     <div style={{ position: 'relative', width: 1080, height: 1350, overflow: 'hidden', backgroundColor: bg }}>
-      <div style={{ position: 'absolute', top: -100, right: -100, width: 600, height: 600, borderRadius: '50%', background: neon, opacity: 0.1, filter: 'blur(140px)' }}/>
+      <Glow color={neon} opacity={0.1} style={{ top: -100, right: -100, width: 600, height: 600 }}/>
 
       {data.playerImageUrl && (
         <EvImg src={data.playerImageUrl} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 680, objectFit: 'cover', objectPosition: 'center top' }}/>
@@ -165,8 +179,8 @@ export function EventSlide2({ data, palette }: SlideBaseProps) {
   return (
     <div style={{ position: 'relative', width: 1080, height: 1350, overflow: 'hidden', backgroundColor: bg, fontFamily: montserrat }}>
       <div style={{ position: 'absolute', inset: 0, backgroundImage: NOISE, opacity: 0.4 }}/>
-      <div style={{ position: 'absolute', top: 180, right: -120, width: 520, height: 520, borderRadius: '50%', background: neon, opacity: 0.12, filter: 'blur(130px)' }}/>
-      <div style={{ position: 'absolute', bottom: 80, left: -120, width: 420, height: 420, borderRadius: '50%', background: neon, opacity: 0.10, filter: 'blur(110px)' }}/>
+      <Glow color={neon} opacity={0.12} style={{ top: 180, right: -120, width: 520, height: 520 }}/>
+      <Glow color={neon} opacity={0.10} style={{ bottom: 80, left: -120, width: 420, height: 420 }}/>
       <Frame bw={bw} bc={neon}/>
 
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', padding: '40px 56px', boxSizing: 'border-box' }}>
@@ -248,9 +262,9 @@ export function EventSlide3({ data, palette }: SlideBaseProps) {
   return (
     <div style={{ position: 'relative', width: 1080, height: 1350, overflow: 'hidden', backgroundColor: bg }}>
       <div style={{ position: 'absolute', inset: 0, backgroundImage: NOISE, opacity: 0.6 }}/>
-      <div style={{ position: 'absolute', top: '10%', left: '-20%', width: 700, height: 500, borderRadius: '50%', transform: 'rotate(-30deg)', background: neon, opacity: 0.15, filter: 'blur(120px)' }}/>
-      <div style={{ position: 'absolute', top: '25%', right: '-15%', width: 600, height: 500, borderRadius: '50%', transform: 'rotate(20deg)', background: neon, opacity: 0.10, filter: 'blur(120px)' }}/>
-      <div style={{ position: 'absolute', bottom: '10%', left: '-10%', width: 500, height: 400, borderRadius: '50%', transform: 'rotate(20deg)', background: neon, opacity: 0.12, filter: 'blur(100px)' }}/>
+      <Glow color={neon} opacity={0.15} style={{ top: '10%', left: '-20%', width: 700, height: 500, transform: 'rotate(-30deg)' }}/>
+      <Glow color={neon} opacity={0.10} style={{ top: '25%', right: '-15%', width: 600, height: 500, transform: 'rotate(20deg)' }}/>
+      <Glow color={neon} opacity={0.12} style={{ bottom: '10%', left: '-10%', width: 500, height: 400, transform: 'rotate(20deg)' }}/>
       <Frame bw={bw} bc={neon}/>
       <Header data={data} txt={txt} num="03"/>
 
