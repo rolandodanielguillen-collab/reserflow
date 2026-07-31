@@ -3,7 +3,7 @@
 // OpenAIService + RemotionService::construirProps).
 
 import type { DesignSlide, EventFlyerData, PaletteTokens } from '@/features/content-studio/types'
-import { getPaletteByColor, DEFAULT_PALETTE } from '@/features/design/palettes'
+import { getPaletteByColor, getPaletteById, DEFAULT_PALETTE } from '@/features/design/palettes'
 import { ensureReadableText } from '@/features/design/contrast'
 
 const OPENAI_BASE = 'https://api.openai.com/v1'
@@ -22,6 +22,8 @@ export type ExtractedFlyer = {
   style?: string | null
   contact_phone?: string | null
   additional_info?: string | null
+  palette_id?: string | null // override manual del operador (botón Cambiar colores)
+  custom_palette?: PaletteTokens | null // paleta personalizada desde el panel
 }
 
 export const REQUIRED_FIELDS: Array<{ key: keyof ExtractedFlyer; question: string }> = [
@@ -238,9 +240,14 @@ export function buildEventSlides(
   brand: BrandForFlyer,
   opts?: { playerImageUrl?: string; palette?: PaletteTokens },
 ): DesignSlide[] {
+  // Prioridad: override del llamador > custom del panel > paleta elegida > match por color
   const paletteFull = opts?.palette
     ? { id: 'custom', name: 'Custom', ...opts.palette }
-    : (data.primary_color ? getPaletteByColor(data.primary_color) : DEFAULT_PALETTE)
+    : data.custom_palette
+      ? { id: 'custom', name: 'Custom', ...data.custom_palette }
+      : data.palette_id
+        ? getPaletteById(data.palette_id)
+        : (data.primary_color ? getPaletteByColor(data.primary_color) : DEFAULT_PALETTE)
   // Contraste WCAG garantizado: si el texto no llega a AA sobre el fondo,
   // se reemplaza por blanco/negro según convenga.
   const palette: PaletteTokens = {

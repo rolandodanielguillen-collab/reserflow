@@ -5,9 +5,18 @@
 // Funcionan igual en preview de browser y en Remotion Still (mismo componente).
 
 import React from 'react'
+import { Img, getRemotionEnvironment } from 'remotion'
 import { loadFont as loadBebasNeue, fontFamily as bebasNeue } from '@remotion/google-fonts/BebasNeue'
 import { loadFont as loadMontserrat, fontFamily as montserrat } from '@remotion/google-fonts/Montserrat'
 import type { EventFlyerData, PaletteTokens } from '../types'
+
+// En render de Remotion usa <Img> (espera la carga con delayRender);
+// en el browser usa <img> normal. Sin esto, el still sale sin la foto.
+function EvImg({ src, style }: { src: string; style: React.CSSProperties }) {
+  if (getRemotionEnvironment().isRendering) return <Img src={src} style={style}/>
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="" style={style}/>
+}
 
 loadBebasNeue('normal', { weights: ['400'], subsets: ['latin'] })
 loadMontserrat('normal', { weights: ['300', '400', '600', '700', '800'], subsets: ['latin'] })
@@ -59,14 +68,20 @@ function Footer({ data, txt, bottom }: { data: EventFlyerData; txt: string; bott
 function BrandLogo({ url, color, size }: { url?: string; color: string; size: number }) {
   if (!url) return null
   return (
-    <div style={{
-      width: size, height: size * 1.19,
-      WebkitMaskImage: `url(${url})`, maskImage: `url(${url})`,
-      WebkitMaskSize: 'contain', maskSize: 'contain',
-      WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
-      WebkitMaskPosition: 'center', maskPosition: 'center',
-      backgroundColor: color,
-    }}/>
+    <>
+      {/* Fuerza delayRender hasta que el logo esté cacheado (la CSS mask no espera sola) */}
+      {getRemotionEnvironment().isRendering && (
+        <Img src={url} style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}/>
+      )}
+      <div style={{
+        width: size, height: size * 1.19,
+        WebkitMaskImage: `url(${url})`, maskImage: `url(${url})`,
+        WebkitMaskSize: 'contain', maskSize: 'contain',
+        WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
+        WebkitMaskPosition: 'center', maskPosition: 'center',
+        backgroundColor: color,
+      }}/>
+    </>
   )
 }
 
@@ -81,8 +96,7 @@ export function EventSlide1({ data, palette }: SlideBaseProps) {
       <div style={{ position: 'absolute', top: -100, right: -100, width: 600, height: 600, borderRadius: '50%', background: neon, opacity: 0.1, filter: 'blur(140px)' }}/>
 
       {data.playerImageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={data.playerImageUrl} alt="" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 680, objectFit: 'cover', objectPosition: 'center top' }}/>
+        <EvImg src={data.playerImageUrl} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 680, objectFit: 'cover', objectPosition: 'center top' }}/>
       )}
       <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 800, background: `linear-gradient(to bottom, transparent 50%, ${bg} 85%)` }}/>
 

@@ -4,17 +4,19 @@ import { useState, useEffect, useCallback, useTransition } from 'react'
 import type { RichPiece, UIStatus } from './studio-shared'
 import { T, FD, FM, ARG_TZ, STATUS_META, dbToUI, uiToDB, utcISOToLocalInput, argInputToDate } from './studio-shared'
 import { ScaledSlide, VideoPreview } from './SlideCanvas'
+import { EventDesignPanel } from './EventDesignPanel'
 import { setCarouselStatus } from '../services/set-carousel-status'
 import { publishCarouselNow } from '../services/update-carousel-status'
 
 type RecordPhase = 'idle' | 'recording' | 'uploading'
 
 // ── Modal ─────────────────────────────────────────────────────────────────
-export function Modal({ piece, dark, onClose, onStatusChange }: {
+export function Modal({ piece, dark, onClose, onStatusChange, onRefresh }: {
   piece: RichPiece
   dark: boolean
   onClose: () => void
   onStatusChange: (dbId: string, newDbStatus: string, scheduledAt?: string) => void
+  onRefresh?: () => void
 }) {
   const [idx, setIdx] = useState(0)
   const [isPending, startTransition] = useTransition()
@@ -255,6 +257,19 @@ export function Modal({ piece, dark, onClose, onStatusChange }: {
               💬 Pendiente envía WA automático al admin para aprobar
             </div>
           </div>
+
+          {/* Panel de diseño (flyers de evento) */}
+          {piece.type === 'carousel' && piece.slides?.[0]?.kind === 'event' && (
+            <EventDesignPanel
+              carouselId={piece.dbId}
+              currentBgUrl={piece.slides[0].data.playerImageUrl}
+              currentCaption={piece.caption}
+              dark={dark}
+              ink={ink}
+              divLine={divLine}
+              onApplied={() => onRefresh?.()}
+            />
+          )}
 
           {/* Programar */}
           <div style={{ padding: '18px 26px', borderBottom: `1px solid ${divLine}` }}>

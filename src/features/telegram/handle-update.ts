@@ -10,6 +10,7 @@ import {
   missingFields, type ExtractedFlyer,
 } from '@/features/ingest/flyer-ingest'
 import { pickBackgroundImage } from '@/features/ingest/player-image'
+import { PALETTES, getPaletteByColor } from '@/features/design/palettes'
 import { renderSlideImages } from '@/features/publishing/services/render-slides'
 import { publishToInstagram } from '@/features/scheduler/services/instagram-publish'
 import { tgSendMessage, tgSendMediaGroup, tgAnswerCallback, tgDownloadFile } from './telegram'
@@ -166,10 +167,10 @@ async function processFlyer(chatId: string, fileId: string, brandSettingsId: str
 }
 
 // ── Generación de slides + preview con botones ────────────────────────────
-async function generateAndSendPreview(chatId: string, carouselId: string, opts?: { excludeBgUrl?: string }) {
+async function generateAndSendPreview(chatId: string, carouselId: string, opts?: { excludeBgUrl?: string; keepBg?: boolean }) {
   const carousel = await prismaAdmin.carousel.findUnique({
     where: { id: carouselId },
-    select: { id: true, userId: true, extractedJson: true, caption: true },
+    select: { id: true, userId: true, extractedJson: true, caption: true, slidesJson: true },
   })
   if (!carousel) return
   const extracted = (carousel.extractedJson ?? {}) as ExtractedFlyer
@@ -181,10 +182,18 @@ async function generateAndSendPreview(chatId: string, carouselId: string, opts?:
 
   await tgSendMessage(chatId, '🎨 Generando el diseño... (~1 min)')
 
-  const playerImageUrl = await pickBackgroundImage(carousel.userId, {
-    paletteHex: extracted.primary_color ?? undefined,
-    excludeUrl: opts?.excludeBgUrl,
-  })
+  let playerImageUrl: string | undefined
+  if (opts?.keepBg && Array.isArray(carousel.slidesJson)) {
+    // Cambio de colores: mantener el fondo actual
+    const first = (carousel.slidesJson as Array<{ data?: { playerImageUrl?: string } }>)[0]
+    playerImageUrl = first?.data?.playerImageUrl
+  }
+  if (!playerImageUrl) {
+    playerImageUrl = await pickBackgroundImage(carousel.userId, {
+      paletteHex: extracted.primary_color ?? undefined,
+      excludeUrl: opts?.excludeBgUrl,
+    })
+  }
   if (opts?.excludeBgUrl && !playerImageUrl) {
     await tgSendMessage(chatId, 'No hay más fondos en la biblioteca para alternar. Subí más imágenes con etiqueta "jugador".')
     return
@@ -233,7 +242,10 @@ async function generateAndSendPreview(chatId: string, carouselId: string, opts?:
       { text: '❌ Rechazar', callback_data: `reject:${carouselId}` },
     ],
   ]
-  if (playerImageUrl) keyboard.push([{ text: '🖼 Cambiar fondo', callback_data: `bg:${carouselId}` }])
+  const variantRow: Array<{ text: string; callback_data: string }> = []
+  if (playerImageUrl) variantRow.push({ text: '🖼 Cambiar fondo', callback_data: `bg:${carouselId}` })
+  variantRow.push({ text: '🎨 Cambiar colores', callback_data: `pal:${carouselId}` })
+  keyboard.push(variantRow)
   await tgSendMessage(chatId, '¿Qué hacemos con esta publicación?', keyboard)
   await setState(chatId, null)
 }
@@ -324,15 +336,28 @@ async function handleCallback(cb: NonNullable<TgUpdate['callback_query']>) {
     await tgAnswerCallback(cb.id, 'Publicando...')
     const carousel = await prismaAdmin.carousel.findUnique({
       where: { id },
-      select: { id: true, userId: true, title: true, caption: true, slideImageUrls: true },
+      select: { id: true, userId: true, title: true, caption: true, slideImageUrls: true, slidesJson: true, darkMode: true },
     })
     if (!carousel) { await tgSendMessage(chatId, '❌ Publicación no encontrada.'); return }
 
     let urls: string[] = []
     try { urls = JSON.parse(carousel.slideImageUrls ?? '[]') as string[] } catch { /* vacío */ }
     if (urls.length === 0) {
-      await tgSendMessage(chatId, '❌ No hay imágenes renderizadas. Abrí el Studio para regenerar.')
-      return
+      // Diseño cambiado desde el panel → re-render con el diseño vigente
+      const { normalizeSlides } = await import('@/features/content-studio/slide-utils')
+      const slides = normalizeSlides(carousel.slidesJson)
+      if (slides.length === 0) {
+        await tgSendMessage(chatId, '❌ No hay slides para renderizar. Abrí el Studio.')
+        return
+      }
+      await tgSendMessage(chatId, '🎨 Renderizando con el diseño actual... (~1 min)')
+      const rendered = await renderSlideImages({ carouselId: id, userId: carousel.userId, slides, dark: carousel.darkMode })
+      if ('error' in rendered) {
+        await tgSendMessage(chatId, `❌ Error renderizando: ${rendered.error}`)
+        return
+      }
+      urls = rendered.urls
+      await prismaAdmin.carousel.update({ where: { id }, data: { slideImageUrls: JSON.stringify(urls) } })
     }
 
     await tgSendMessage(chatId, '🚀 Publicando en Instagram...')
@@ -370,6 +395,26 @@ async function handleCallback(cb: NonNullable<TgUpdate['callback_query']>) {
       currentBg = first?.data?.playerImageUrl
     }
     await generateAndSendPreview(chatId, id, { excludeBgUrl: currentBg })
+    return
+  }
+
+  if (action === 'pal') {
+    const carousel = await prismaAdmin.carousel.findUnique({
+      where: { id },
+      select: { extractedJson: true },
+    })
+    if (!carousel) { await tgAnswerCallback(cb.id); return }
+    const extracted = (carousel.extractedJson ?? {}) as ExtractedFlyer
+    const currentId = extracted.palette_id
+      ?? (extracted.primary_color ? getPaletteByColor(extracted.primary_color).id : PALETTES[0]!.id)
+    const idx = PALETTES.findIndex(p => p.id === currentId)
+    const next = PALETTES[(idx + 1) % PALETTES.length]!
+    await prismaAdmin.carousel.update({
+      where: { id },
+      data: { extractedJson: { ...extracted, palette_id: next.id } as object },
+    })
+    await tgAnswerCallback(cb.id, `Paleta: ${next.name}`)
+    await generateAndSendPreview(chatId, id, { keepBg: true })
     return
   }
 

@@ -563,6 +563,7 @@ export function ContentStudio() {
           dark={dark}
           onClose={() => setSelectedDbId(null)}
           onStatusChange={handleStatusChange}
+          onRefresh={loadPieces}
         />
       )}
     </div>
