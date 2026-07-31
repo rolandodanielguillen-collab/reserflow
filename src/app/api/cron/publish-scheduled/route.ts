@@ -116,7 +116,9 @@ export async function GET(request: Request) {
         } else {
           // === CAROUSEL PATH ===
           const preCapUrls = post.slideImageUrls
-            ? (JSON.parse(post.slideImageUrls) as string[])
+            ? (post.slideImageUrls.startsWith("[")
+                ? (JSON.parse(post.slideImageUrls) as string[])
+                : post.slideImageUrls.split(",").map(u => u.trim()).filter(Boolean))
             : []
           let imageUrls: string[]
 
