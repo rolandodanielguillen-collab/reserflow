@@ -6,6 +6,7 @@ import { T, FD, FM } from '@/features/content-studio/components/studio-shared'
 
 const NAV = [
   { href: '/dashboard', label: 'Inicio', icon: '⌂', exact: true },
+  { href: '/dashboard/flyers', label: 'Flyers', icon: '🎾' },
   { href: '/dashboard/content-studio', label: 'Studio', icon: '▦' },
   { href: '/dashboard/biblioteca', label: 'Biblioteca', icon: '🖼' },
   { href: '/dashboard/campanas', label: 'Campañas', icon: '📣' },
