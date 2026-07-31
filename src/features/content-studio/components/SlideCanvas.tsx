@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from 'react'
 import type { DesignSlide } from '../types'
+import { EventSlide } from './EventSlides'
 
 // ── Design tokens ─────────────────────────────────────────────────────────
 const T = {
@@ -471,6 +472,7 @@ function SlideRenderer({ slide, dark, idx, total, cta, forCapture }: { slide: De
     case 'imageBlock':  return <ImageBlockSlide s={slide} {...p}/>
     case 'cta':         return <CtaSlide s={slide} dark={dark} idx={idx} total={total} forCapture={forCapture}/>
     case 'list':        return <ListSlide s={slide} {...p}/>
+    case 'event':       return <EventSlide slide={slide.slide} data={slide.data} palette={slide.palette}/>
     case 'flowScreen':  return <FlowScreenSlide s={slide} {...p}/>
     default:            return <QuoteSlide s={{ kind: 'quote', text: '—' }} {...p}/>
   }

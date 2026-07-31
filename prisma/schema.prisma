@@ -91,10 +91,15 @@ model BrandSettings {
   metaAccessToken    String?   @db.Text
   instagramAccountId String?
   metaTokenUpdatedAt DateTime? // para avisar antes de que venza el long-lived (60d)
+  metaTokenWarnedAt  DateTime? // último aviso de vencimiento enviado
 
-  // WhatsApp / YCloud
+  // WhatsApp / YCloud (legacy, reemplazado por Telegram)
   ycloudApiKey    String? @db.Text
   whatsappPhone   String?
+
+  // Telegram (canal del operador)
+  telegramChatId   String?
+  telegramLinkCode String? @unique
 
   pendingApprovalCarouselId String?
 
@@ -165,6 +170,13 @@ model Carousel {
   // Template content piece mapping
   templatePieceId Int?
 
+  // Ingesta de flyers (datos extraídos por GPT-4o Vision)
+  extractedJson Json?
+  sourceFlyerUrl String? @db.Text
+
+  // Campañas
+  campaignId String?
+
   // Error handling
   failReason String? @db.Text
   retryCount Int     @default(0)
@@ -174,10 +186,103 @@ model Carousel {
 
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   contentIdea ContentIdea? @relation(fields: [contentIdeaId], references: [id], onDelete: SetNull)
+  campaign    Campaign?    @relation(fields: [campaignId], references: [id], onDelete: SetNull)
 
   @@index([userId, status])
   @@index([scheduledAt])
   @@map("carousels")
+}
+
+// ─── Telegram: estado conversacional por chat ──────────────────
+
+model TelegramChatState {
+  id        String   @id @default(cuid())
+  chatId    String   @unique
+  state     Json?
+  updatedAt DateTime @updatedAt
+
+  @@map("telegram_chat_state")
+}
+
+// ─── Biblioteca de imágenes por tenant ─────────────────────────
+
+model Asset {
+  id             String    @id @default(cuid())
+  userId         String
+  url            String    @db.Text
+  filename       String
+  mimeType       String?
+  width          Int?
+  height         Int?
+  sizeBytes      Int?
+  tags           Json?     // ["jugador","cancha",...] — auto-tag IA + manual
+  dominantColors Json?     // ["#aabbcc", ...]
+  orientation    String?   // portrait | landscape | square
+  textSpace      String?   // top | bottom | left | right | center | none
+  useCount       Int       @default(0)
+  lastUsedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("assets")
+}
+
+// ─── Campañas de marketing ─────────────────────────────────────
+
+model Campaign {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  objective   String?   @db.Text
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Float?
+  status      String    @default("activa") // activa | pausada | terminada
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  carousels Carousel[]
+  adIntents AdIntent[]
+
+  @@index([userId])
+  @@map("campaigns")
+}
+
+// ─── Meta Ads (modo preparado hasta tener app review) ──────────
+
+model AdIntent {
+  id         String    @id @default(cuid())
+  userId     String
+  carouselId String?
+  campaignId String?
+  budget     Float?
+  durationDays Int?
+  objective  String?
+  status     String    @default("sin_conexion") // sin_conexion | creado | activo | error
+  metaAdId   String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  campaign Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("ad_intents")
+}
+
+// ─── Métricas orgánicas por publicación ────────────────────────
+
+model PostInsight {
+  id          String   @id @default(cuid())
+  carouselId  String   @unique
+  reach       Int?
+  likes       Int?
+  comments    Int?
+  saved       Int?
+  shares      Int?
+  fetchedAt   DateTime @updatedAt
+
+  @@map("post_insights")
 }
 
 // ─── Enums ─────────────────────────────────────────────────────

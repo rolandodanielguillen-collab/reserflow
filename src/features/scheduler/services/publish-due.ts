@@ -1,4 +1,5 @@
 import { prismaAdmin } from "@/lib/prisma-admin"
+import { notifyOperator } from "@/features/telegram/notify"
 import { renderSlideImages } from "@/features/publishing/services/render-slides"
 import { renderReelToFile } from "@/features/publishing/services/render-reel"
 import { normalizeSlides } from "@/features/content-studio/slide-utils"
@@ -161,11 +162,17 @@ export async function publishDuePosts(): Promise<PublishDueResult> {
             where: { id: post.id },
             data: { status: "failed", failReason: reason, retryCount: currentRetry },
           })
+          if (currentRetry >= MAX_RETRIES - 1) {
+            await notifyOperator(post.userId, `❌ Falló la publicación de "${post.title}" (sin más reintentos):\n${reason}`).catch(() => {})
+          }
           return { id: post.id, status: "failed", reason }
         }
 
         console.log(postTag, "PUBLISHED! postId:", publishResult.postId)
-        await notifyPublishResult(post.userId, post.title, publishResult.permalink)
+        await notifyOperator(
+          post.userId,
+          `✅ Publicado en Instagram:\n\n${post.title}\n${publishResult.permalink ?? ""}`,
+        ).catch(e => console.error(postTag, "notify failed:", e))
         return { id: post.id, status: "published", postId: publishResult.postId }
       } catch (err) {
         const reason = err instanceof Error ? err.message : "Error desconocido"
@@ -197,23 +204,3 @@ export async function publishDuePosts(): Promise<PublishDueResult> {
   }
 }
 
-// Notificación best-effort al operador (Telegram reemplaza a YCloud en F2;
-// mientras tanto se mantiene el aviso por WhatsApp si está configurado).
-async function notifyPublishResult(userId: string, title: string, permalink?: string) {
-  const ycApiKey = process.env.YCLOUD_API_KEY
-  const ycFrom = process.env.YCLOUD_WHATSAPP_FROM
-  if (!ycApiKey || !ycFrom) return
-
-  const brand = await prismaAdmin.brandSettings.findFirst({
-    where: { userId },
-    select: { whatsappPhone: true },
-  })
-  if (!brand?.whatsappPhone) return
-
-  const msg = `Publicado en Instagram:\n\n${title}\n${permalink ?? ""}`
-  await fetch("https://api.ycloud.com/v2/whatsapp/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-API-Key": ycApiKey },
-    body: JSON.stringify({ from: ycFrom, to: brand.whatsappPhone, type: "text", text: { body: msg } }),
-  }).catch((e) => console.error("[publish-due] WA notify failed:", e))
-}

@@ -1,5 +1,40 @@
 export type FlowItem = { text: string; selected?: boolean }
 
+// ── Flyers de evento (port de padelpost-ai) ───────────────────────────────
+export type PaletteTokens = {
+  background: string
+  primary: string
+  accent: string
+  text: string
+}
+
+export type EventFlyerData = {
+  clubName?: string
+  tournamentName?: string
+  startDate?: string // YYYY-MM-DD
+  endDate?: string
+  categoriesSummary?: string
+  city?: string
+  phone?: string
+  year?: string
+  playerImageUrl?: string
+  logoUrl?: string
+  clientNumber?: string
+  headerBrand?: string
+  footerLeft?: string
+  footerRight?: string
+  borderWidth?: number
+  categoriesMen?: string
+  categoriesWomen?: string
+  prizesMen?: string
+  prizesWomen?: string
+  price?: string
+  conditions?: string
+  prizesLabel?: string
+  footerText?: string
+  igHandle?: string
+}
+
 export type DesignSlide =
   | { kind: 'cover'; eyebrow?: string; big: string; foot?: string }
   | { kind: 'stat'; top: string; big: string; bottom?: string }
@@ -15,6 +50,7 @@ export type DesignSlide =
   | { kind: 'imageBlock'; label: string; caption: string }
   | { kind: 'cta'; big: string; cta: string }
   | { kind: 'list'; title?: string | null; items: string[] }
+  | { kind: 'event'; slide: 1 | 2 | 3; data: EventFlyerData; palette: PaletteTokens }
   | {
       kind: 'flowScreen'
       eyebrow?: string

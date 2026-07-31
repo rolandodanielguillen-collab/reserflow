@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { publishDuePosts } from "@/features/scheduler/services/publish-due"
+import { warnExpiringMetaTokens } from "@/features/scheduler/services/token-watch"
 
 export async function GET(request: Request) {
   console.log("[Cron] === Publish-scheduled START ===", new Date().toISOString())
@@ -15,6 +16,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  await warnExpiringMetaTokens().catch(e => console.error("[Cron] token-watch:", e))
   const result = await publishDuePosts()
   return NextResponse.json(result)
 }

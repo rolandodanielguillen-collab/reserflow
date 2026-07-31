@@ -1,9 +1,12 @@
 import { getBrandSettings } from '@/features/settings/services/brand-settings'
 import { BrandSettingsForm } from '@/features/settings/components/BrandSettingsForm'
+import { TelegramLinkCard } from '@/features/telegram/TelegramLinkCard'
+import { getTelegramLinkStatus } from '@/features/telegram/link-actions'
 import Link from 'next/link'
 
 export default async function AjustesPage() {
   const { data } = await getBrandSettings()
+  const tg = await getTelegramLinkStatus()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -24,6 +27,7 @@ export default async function AjustesPage() {
 
       <main className="max-w-3xl mx-auto px-6 py-8">
         <BrandSettingsForm initial={data} />
+        <TelegramLinkCard linked={tg.linked} botUsername={tg.botUsername} />
       </main>
     </div>
   )

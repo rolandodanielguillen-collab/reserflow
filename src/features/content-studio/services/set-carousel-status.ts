@@ -3,6 +3,7 @@
 import { prismaRls } from '@/lib/prisma-rls'
 import { prismaAdmin } from '@/lib/prisma-admin'
 import { auth } from '@/lib/auth'
+import { sendApprovalToTelegram } from '@/features/telegram/approval'
 
 export type DBStatus = 'draft' | 'review' | 'approved' | 'scheduled' | 'published'
 
@@ -45,23 +46,28 @@ export async function setCarouselStatus(
     data: { status: newStatus },
   })
 
-  // Auto-send WA when transitioning to review (pendiente)
+  // Al pasar a "pendiente": mandar aprobación por Telegram (botones).
+  // Fallback WhatsApp legacy si el tenant todavía no vinculó Telegram.
   if (newStatus === 'review') {
-    const brand = await prismaRls.brandSettings.findFirst({
-      where: {},
-      select: { whatsappPhone: true },
+    const sentTg = await sendApprovalToTelegram(carouselId).catch(err => {
+      console.error('[approval] Telegram falló:', err)
+      return false
     })
 
-    const phone = brand?.whatsappPhone as string | undefined
-    if (phone) {
-      // Track pending approval
-      await prismaRls.brandSettings.updateMany({
+    if (!sentTg) {
+      const brand = await prismaRls.brandSettings.findFirst({
         where: {},
-        data: { pendingApprovalCarouselId: carouselId },
+        select: { whatsappPhone: true },
       })
-
-      const msg = `🗓 *Reser+* — Carrusel listo para aprobar:\n\n📝 *${title}*\n\nRespondé *Sí* para aprobar o *No* para rechazar.`
-      await sendWA(phone, msg)
+      const phone = brand?.whatsappPhone as string | undefined
+      if (phone) {
+        await prismaRls.brandSettings.updateMany({
+          where: {},
+          data: { pendingApprovalCarouselId: carouselId },
+        })
+        const msg = `🗓 Carrusel listo para aprobar:\n\n📝 *${title}*\n\nRespondé *Sí* para aprobar o *No* para rechazar.`
+        await sendWA(phone, msg)
+      }
     }
   }
 
