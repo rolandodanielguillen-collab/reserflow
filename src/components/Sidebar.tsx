@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { T, FD, FM } from '@/features/content-studio/components/studio-shared'
+import { doSignOut } from './signout-action'
 
 const NAV = [
   { href: '/dashboard', label: 'Inicio', icon: '⌂', exact: true },
@@ -13,7 +14,7 @@ const NAV = [
   { href: '/ajustes', label: 'Ajustes', icon: '⚙' },
 ]
 
-export function Sidebar() {
+export function Sidebar({ userEmail, brandName }: { userEmail?: string | null; brandName?: string | null }) {
   const pathname = usePathname()
 
   return (
@@ -31,6 +32,14 @@ export function Sidebar() {
           Content OS
         </span>
       </Link>
+
+      {(brandName || userEmail) && (
+        <div style={{ margin: '0 4px 14px', padding: '10px 12px', borderRadius: 10, background: 'rgba(245,242,235,0.05)', border: '1px solid rgba(245,242,235,0.08)' }}>
+          <div style={{ fontFamily: FM, fontSize: 8.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(245,242,235,0.45)', marginBottom: 3 }}>Cuenta activa</div>
+          {brandName && <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 14, color: T.mint }}>{brandName}</div>}
+          {userEmail && <div style={{ fontFamily: FM, fontSize: 9.5, color: 'rgba(245,242,235,0.6)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userEmail}</div>}
+        </div>
+      )}
 
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {NAV.map(item => {
@@ -54,6 +63,22 @@ export function Sidebar() {
           )
         })}
       </nav>
+
+      <div style={{ flex: 1 }}/>
+
+      <button
+        onClick={() => doSignOut()}
+        style={{
+          all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 12px', borderRadius: 10, fontFamily: FD, fontSize: 13,
+          color: 'rgba(245,242,235,0.6)', border: '1px solid transparent',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(224,82,82,0.12)'; e.currentTarget.style.color = '#E05252' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(245,242,235,0.6)' }}
+      >
+        <span style={{ fontSize: 14, width: 18, textAlign: 'center' }}>⏻</span>
+        Cerrar sesión
+      </button>
     </aside>
   )
 }
