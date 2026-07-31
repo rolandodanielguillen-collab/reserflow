@@ -36,13 +36,24 @@ async function renderIntroVideo(carouselId: string, slide1: DesignSlide, slide2:
     }
     const composition = await selectComposition({ serveUrl, id: "EventIntro", inputProps })
     console.log(`[event-media] ${carouselId} renderizando intro animada (10s)...`)
+    let lastLogged = -1
     await renderMedia({
       composition,
       serveUrl,
       codec: "vp8",
       outputLocation: webm,
       inputProps,
+      // ponytail: 2 workers — el VPS (6 cores) comparte con todos los sitios;
+      // más concurrencia lo ahoga (load 30+) y tarda MÁS por swap
+      concurrency: 2,
       chromiumOptions: { disableWebSecurity: true, gl: "swangle", headless: true },
+      onProgress: ({ progress }) => {
+        const pct = Math.floor(progress * 10) * 10
+        if (pct > lastLogged) {
+          lastLogged = pct
+          console.log(`[event-media] ${carouselId} intro ${pct}%`)
+        }
+      },
     })
     await webmToMp4(webm, mp4)
     const url = await uploadFile(fs.readFileSync(mp4), `slides/${carouselId}`, "intro.mp4")

@@ -49,6 +49,7 @@ export async function renderReelToFile(opts: {
       codec: "vp8",
       outputLocation: webmPath,
       inputProps,
+      concurrency: 2,
       chromiumOptions: {
         disableWebSecurity: true,
         gl: "swangle",
