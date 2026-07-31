@@ -3,6 +3,7 @@
 import { prismaRls } from '@/lib/prisma-rls'
 import { prismaAdmin } from '@/lib/prisma-admin'
 import { auth } from '@/lib/auth'
+import { decryptSecret } from '@/lib/crypto'
 
 
 interface InstagramPublishParams {
@@ -41,7 +42,7 @@ export async function publishReelToInstagram({ carouselId, videoUrl, caption, us
     return { error: 'Configura el token de Meta y el ID de cuenta Instagram en Ajustes.' }
   }
 
-  const token = brand.metaAccessToken
+  const token = decryptSecret(brand.metaAccessToken)!
   const igId  = brand.instagramAccountId
   const BASE  = 'https://graph.facebook.com/v21.0'
 
@@ -130,7 +131,7 @@ export async function publishToInstagram({ carouselId, imageUrls, caption, userI
     return { error: 'Configura el token de Meta y el ID de cuenta Instagram en Ajustes.' }
   }
 
-  const token      = brand.metaAccessToken
+  const token      = decryptSecret(brand.metaAccessToken)!
   const igId       = brand.instagramAccountId
   const BASE       = 'https://graph.facebook.com/v21.0'
 

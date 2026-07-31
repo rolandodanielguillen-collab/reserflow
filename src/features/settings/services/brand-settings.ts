@@ -2,6 +2,7 @@
 
 import { prismaRls } from '@/lib/prisma-rls'
 import { auth } from '@/lib/auth'
+import { encryptSecret, decryptSecret } from '@/lib/crypto'
 import { z } from 'zod'
 
 const BrandSettingsSchema = z.object({
@@ -33,6 +34,10 @@ export async function getBrandSettings() {
     Object.entries(data).map(([k, v]) => [k, v === null ? undefined : v])
   ) as Partial<BrandSettingsValues> & { id: string; userId: string }
 
+  // Secretos cifrados en reposo → el dueño autenticado los ve en claro
+  if (cleaned.metaAccessToken) cleaned.metaAccessToken = decryptSecret(cleaned.metaAccessToken) ?? undefined
+  if (cleaned.ycloudApiKey) cleaned.ycloudApiKey = decryptSecret(cleaned.ycloudApiKey) ?? undefined
+
   return { data: cleaned }
 }
 
@@ -45,11 +50,21 @@ export async function saveBrandSettings(values: BrandSettingsValues) {
 
   const userId = session.user.id
 
+  // Cifrar secretos antes de tocar la DB; detectar cambio de token Meta
+  const data = { ...parsed.data } as typeof parsed.data & { metaTokenUpdatedAt?: Date }
+  if (data.metaAccessToken) {
+    const prev = await prismaRls.brandSettings.findFirst({ select: { metaAccessToken: true } })
+    const prevPlain = prev?.metaAccessToken ? decryptSecret(prev.metaAccessToken) : null
+    if (prevPlain !== data.metaAccessToken) data.metaTokenUpdatedAt = new Date()
+    data.metaAccessToken = encryptSecret(data.metaAccessToken)
+  }
+  if (data.ycloudApiKey) data.ycloudApiKey = encryptSecret(data.ycloudApiKey)
+
   try {
     await prismaRls.brandSettings.upsert({
       where: { userId },
-      create: { ...parsed.data, userId },
-      update: parsed.data,
+      create: { ...data, userId },
+      update: data,
     })
 
     return { success: true }

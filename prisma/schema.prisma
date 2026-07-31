@@ -87,9 +87,10 @@ model BrandSettings {
   productDescription String? @db.Text
   contentPillars  String?  @db.Text
 
-  // Instagram / Meta
-  metaAccessToken    String? @db.Text
+  // Instagram / Meta (metaAccessToken cifrado AES-256-GCM, ver lib/crypto.ts)
+  metaAccessToken    String?   @db.Text
   instagramAccountId String?
+  metaTokenUpdatedAt DateTime? // para avisar antes de que venza el long-lived (60d)
 
   // WhatsApp / YCloud
   ycloudApiKey    String? @db.Text
