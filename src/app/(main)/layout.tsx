@@ -18,7 +18,7 @@ export default async function MainLayout({
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0A1529' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '100vh', background: '#0A1529' }}>
       <Sidebar userEmail={session?.user?.email} brandName={brandName} />
       <main style={{ flex: 1, minWidth: 0 }}>{children}</main>
     </div>

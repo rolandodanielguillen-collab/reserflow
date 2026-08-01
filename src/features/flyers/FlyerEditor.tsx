@@ -25,7 +25,7 @@ const SECTION: React.CSSProperties = { fontFamily: FM, fontSize: 10, letterSpaci
 
 type Busy = null | 'guardar' | 'publicar' | 'programar' | 'aprobar'
 
-export function FlyerEditor() {
+export function FlyerEditor({ initialPieceId }: { initialPieceId?: string | null }) {
   const [pieces, setPieces] = useState<FlyerPiece[]>([])
   const [closingVideoUrl, setClosingVideoUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -33,6 +33,17 @@ export function FlyerEditor() {
   const [slideIdx, setSlideIdx] = useState(0)
   const [view, setView] = useState<'slides' | 'anim'>('slides')
   const [flyerZoom, setFlyerZoom] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)')
+    const apply = () => setIsMobile(mq.matches)
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [])
+
+  const previewW = isMobile ? 330 : 520
 
   // Diseño en edición (preview instantáneo, se persiste con Guardar)
   const [paletteId, setPaletteId] = useState<string | null>(null)
@@ -56,7 +67,13 @@ export function FlyerEditor() {
     const data = await getFlyerPieces()
     setPieces(data.pieces)
     setClosingVideoUrl(data.closingVideoUrl)
-    if (!keepSel || !data.pieces.some(r => r.id === selId)) setSelId(data.pieces[0]?.id ?? null)
+    if (!keepSel || !data.pieces.some(r => r.id === selId)) {
+      // Deep-link desde Telegram: ?piece=<id> preselecciona la pieza
+      const target = initialPieceId && data.pieces.some(r => r.id === initialPieceId)
+        ? initialPieceId
+        : data.pieces[0]?.id ?? null
+      setSelId(target)
+    }
     setLoading(false)
   }
   useEffect(() => { refresh(false); listLibraryImagesForPicker().then(setImages) }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -171,10 +188,12 @@ export function FlyerEditor() {
   const total = liveSlides.length
 
   return (
-    <div style={{ minHeight: '100vh', background: T.navyDeep, color: T.cream, fontFamily: FD, display: 'flex' }}>
+    <div style={{ minHeight: '100vh', background: T.navyDeep, color: T.cream, fontFamily: FD, display: 'flex', flexDirection: isMobile ? 'column' : 'row' }}>
 
       {/* ── Columna 1: lista de flyers ─────────────────────────────── */}
-      <aside style={{ width: 270, minWidth: 270, borderRight: `1px solid ${LINE}`, padding: '24px 14px', display: 'flex', flexDirection: 'column', gap: 8, height: '100vh', overflowY: 'auto', position: 'sticky', top: 0 }}>
+      <aside style={isMobile
+        ? { width: '100%', borderBottom: `1px solid ${LINE}`, padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 250, overflowY: 'auto' }
+        : { width: 270, minWidth: 270, borderRight: `1px solid ${LINE}`, padding: '24px 14px', display: 'flex', flexDirection: 'column', gap: 8, height: '100vh', overflowY: 'auto', position: 'sticky', top: 0 }}>
         <div style={{ padding: '0 8px 10px' }}>
           <div style={{ fontFamily: FM, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: T.mint, fontWeight: 700, marginBottom: 4 }}>Flyers</div>
           <div style={{ fontFamily: FD, fontWeight: 900, fontSize: 21, letterSpacing: '-0.03em' }}>Editor de flyers</div>
@@ -222,8 +241,8 @@ export function FlyerEditor() {
       ) : (
         <>
           {/* ── Columna 2: preview grande en vivo ─────────────────────── */}
-          <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '26px 28px 40px' }}>
-            <div style={{ width: '100%', maxWidth: 560, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: isMobile ? '18px 10px 24px' : '26px 28px 40px' }}>
+            <div style={{ width: '100%', maxWidth: previewW + 40, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
               <div>
                 <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 19, letterSpacing: '-0.02em' }}>{sel.title}</div>
                 <div style={{ fontFamily: FM, fontSize: 9.5, color: INK_SOFT, marginTop: 3 }}>
@@ -247,7 +266,7 @@ export function FlyerEditor() {
               <>
                 <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 70px rgba(0,0,0,0.5)', border: `1px solid ${LINE}` }}>
                   {liveSlides[slideIdx] && (
-                    <ScaledSlide slide={liveSlides[slideIdx]!} dark index={slideIdx} total={total} width={520}/>
+                    <ScaledSlide slide={liveSlides[slideIdx]!} dark index={slideIdx} total={total} width={previewW}/>
                   )}
                   {total > 1 && (
                     <>
@@ -268,7 +287,7 @@ export function FlyerEditor() {
             ) : (
               <>
                 {/* Animación de portada en vivo (con las ediciones actuales) */}
-                <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 70px rgba(0,0,0,0.5)', border: `1px solid ${LINE}`, width: 520, height: 650 }}>
+                <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 70px rgba(0,0,0,0.5)', border: `1px solid ${LINE}`, width: previewW, height: previewW * 1.25 }}>
                   {liveSlides.length >= 2 ? (
                     <RemotionPlayer
                       component={EventIntroScene as React.ComponentType<Record<string, unknown>>}
@@ -280,10 +299,10 @@ export function FlyerEditor() {
                       controls
                       loop
                       autoPlay
-                      style={{ width: 520, height: 650 }}
+                      style={{ width: previewW, height: previewW * 1.25 }}
                     />
                   ) : (
-                    <div style={{ width: 520, height: 650, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 11, color: INK_SOFT }}>
+                    <div style={{ width: previewW, height: previewW * 1.25, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 11, color: INK_SOFT }}>
                       Esta pieza no tiene los 2 slides de la animación
                     </div>
                   )}
@@ -293,7 +312,7 @@ export function FlyerEditor() {
                 </div>
 
                 {closingVideoUrl && (
-                  <div style={{ marginTop: 18, width: 520 }}>
+                  <div style={{ marginTop: 18, width: previewW }}>
                     <div style={{ fontFamily: FM, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: INK_SOFT, fontWeight: 700, marginBottom: 8 }}>Video de cierre (último elemento)</div>
                     <video src={closingVideoUrl} controls preload="metadata" style={{ width: 240, borderRadius: 12, border: `1px solid ${LINE}`, display: 'block' }}/>
                   </div>
@@ -306,10 +325,10 @@ export function FlyerEditor() {
               <button
                 onClick={() => setFlyerZoom(true)}
                 title="Flyer original (referencia)"
-                style={{ all: 'unset', cursor: 'zoom-in', position: 'fixed', right: 350, bottom: 20, zIndex: 40, borderRadius: 10, overflow: 'hidden', border: `2px solid ${T.amber}88`, boxShadow: '0 10px 30px rgba(0,0,0,0.55)', background: T.navySoft }}
+                style={{ all: 'unset', cursor: 'zoom-in', position: 'fixed', right: isMobile ? 12 : 350, bottom: isMobile ? 12 : 20, zIndex: 40, borderRadius: 10, overflow: 'hidden', border: `2px solid ${T.amber}88`, boxShadow: '0 10px 30px rgba(0,0,0,0.55)', background: T.navySoft }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={sel.sourceFlyerUrl} alt="Flyer original" style={{ width: 110, display: 'block' }}/>
+                <img src={sel.sourceFlyerUrl} alt="Flyer original" style={{ width: isMobile ? 76 : 110, display: 'block' }}/>
                 <div style={{ fontFamily: FM, fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.amber, textAlign: 'center', padding: '4px 0' }}>Original ⤢</div>
               </button>
             )}
@@ -329,7 +348,9 @@ export function FlyerEditor() {
           </main>
 
           {/* ── Columna 3: diseño y acciones ──────────────────────────── */}
-          <aside style={{ width: 330, minWidth: 330, borderLeft: `1px solid ${LINE}`, background: T.navySoft, padding: '24px 22px 40px', height: '100vh', overflowY: 'auto', position: 'sticky', top: 0 }}>
+          <aside style={isMobile
+            ? { width: '100%', borderTop: `1px solid ${LINE}`, background: T.navySoft, padding: '20px 14px 90px' }
+            : { width: 330, minWidth: 330, borderLeft: `1px solid ${LINE}`, background: T.navySoft, padding: '24px 22px 40px', height: '100vh', overflowY: 'auto', position: 'sticky', top: 0 }}>
 
             <div style={SECTION}>Combinación de colores</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 8 }}>
@@ -459,7 +480,7 @@ export function FlyerEditor() {
                   )}
 
                   <button disabled={!!busy} onClick={aAprobacion} style={{ all: 'unset', cursor: 'pointer', padding: '12px 0', borderRadius: 10, background: 'rgba(245,242,235,0.07)', border: `1px solid ${LINE}`, color: T.cream, fontFamily: FD, fontWeight: 600, fontSize: 13.5, textAlign: 'center', opacity: busy === 'aprobar' ? 0.6 : 1 }}>
-                    {busy === 'aprobar' ? 'Enviando...' : '💬 Mandar a mi Telegram para aprobar'}
+                    {busy === 'aprobar' ? 'Enviando...' : '💬 Mandarme el link a Telegram'}
                   </button>
                 </>
               )}

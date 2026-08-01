@@ -13,7 +13,7 @@ import { pickBackgroundImage } from '@/features/ingest/player-image'
 import { PALETTES, getPaletteByColor } from '@/features/design/palettes'
 import { renderCarouselMedia } from '@/features/publishing/services/render-event-media'
 import { publishToInstagram } from '@/features/scheduler/services/instagram-publish'
-import { tgSendMessage, tgSendMediaGroup, tgAnswerCallback, tgDownloadFile } from './telegram'
+import { tgSendMessage, tgAnswerCallback, tgDownloadFile } from './telegram'
 
 // ── Tipos del update de Telegram (solo lo que usamos) ─────────────────────
 type TgUpdate = {
@@ -180,7 +180,7 @@ async function generateAndSendPreview(chatId: string, carouselId: string, opts?:
     select: { brandName: true, logoUrl: true, whatsappPhone: true },
   })
 
-  await tgSendMessage(chatId, '🎨 Generando el diseño... (~1 min)')
+  await tgSendMessage(chatId, '🎨 Armando el diseño...')
 
   let playerImageUrl: string | undefined
   if (opts?.keepBg && Array.isArray(carousel.slidesJson)) {
@@ -208,10 +208,11 @@ async function generateAndSendPreview(chatId: string, carouselId: string, opts?:
 
   const caption = carousel.caption ?? await generateCaption(extracted)
 
+  const title = extracted.tournament_name ?? 'Flyer'
   await prismaAdmin.carousel.update({
     where: { id: carouselId },
     data: {
-      title: extracted.tournament_name ?? 'Flyer',
+      title,
       slidesJson: slides as unknown as object,
       slidesCount: slides.length,
       caption,
@@ -219,35 +220,14 @@ async function generateAndSendPreview(chatId: string, carouselId: string, opts?:
     },
   })
 
-  const rendered = await renderCarouselMedia({
-    carouselId,
-    userId: carousel.userId,
-    slides,
-    dark: true,
-  })
-  if ('error' in rendered) {
-    await tgSendMessage(chatId, `❌ Error renderizando: ${rendered.error}\nPodés verlo igual en el Studio.`)
-    return
-  }
-
-  await prismaAdmin.carousel.update({
-    where: { id: carouselId },
-    data: { slideImageUrls: JSON.stringify(rendered.urls) },
-  })
-
-  await tgSendMediaGroup(chatId, rendered.urls, caption)
-  const keyboard = [
-    [{ text: '✅ Aprobar y publicar', callback_data: `approve:${carouselId}` }],
-    [
-      { text: '📅 Programar', callback_data: `schedule:${carouselId}` },
-      { text: '❌ Rechazar', callback_data: `reject:${carouselId}` },
-    ],
-  ]
-  const variantRow: Array<{ text: string; callback_data: string }> = []
-  if (playerImageUrl) variantRow.push({ text: '🖼 Cambiar fondo', callback_data: `bg:${carouselId}` })
-  variantRow.push({ text: '🎨 Cambiar colores', callback_data: `pal:${carouselId}` })
-  keyboard.push(variantRow)
-  await tgSendMessage(chatId, '¿Qué hacemos con esta publicación?', keyboard)
+  // La revisión, edición y publicación se hacen en la web (pedido del
+  // operador): acá solo se avisa con el link directo a la pieza.
+  // Sin render en la ingesta → el bot responde en segundos.
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://reserflow.reserplus.com'
+  await tgSendMessage(
+    chatId,
+    `✅ <b>${title}</b> está listo para revisar.\n\n✏️ Editá colores, fondo y datos, mirá la animación con play y publicá desde acá (PC o celu):\n${base}/dashboard/flyers?piece=${carouselId}`,
+  )
   await setState(chatId, null)
 }
 

@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { T, FD, FM } from '@/features/content-studio/components/studio-shared'
@@ -16,6 +17,46 @@ const NAV = [
 
 export function Sidebar({ userEmail, brandName }: { userEmail?: string | null; brandName?: string | null }) {
   const pathname = usePathname()
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)')
+    const apply = () => setIsMobile(mq.matches)
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [])
+
+  if (isMobile) {
+    return (
+      <aside style={{ width: '100%', background: T.navyDeep, borderBottom: '1px solid rgba(245,242,235,0.07)', padding: '10px 10px 8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <svg viewBox="0 0 100 100" width={16} height={16}>
+            <rect x="38" y="8" width="24" height="84" fill={T.mint}/>
+            <rect x="8" y="38" width="84" height="24" fill={T.mint}/>
+          </svg>
+          {brandName && <span style={{ fontFamily: FD, fontWeight: 800, fontSize: 13, color: T.mint }}>{brandName}</span>}
+          <span style={{ fontFamily: FM, fontSize: 9, color: 'rgba(245,242,235,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>{userEmail}</span>
+          <button onClick={() => doSignOut()} style={{ all: 'unset', cursor: 'pointer', fontFamily: FM, fontSize: 10, color: 'rgba(245,242,235,0.6)', padding: '4px 8px' }}>⏻ Salir</button>
+        </div>
+        <nav style={{ display: 'flex', gap: 4, overflowX: 'auto' }}>
+          {NAV.map(item => {
+            const active = item.exact ? pathname === item.href : pathname.startsWith(item.href)
+            return (
+              <Link key={item.href} href={item.href} style={{
+                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 9,
+                textDecoration: 'none', fontFamily: FD, fontSize: 12.5, fontWeight: active ? 700 : 500,
+                color: active ? T.mint : 'rgba(245,242,235,0.72)',
+                background: active ? `${T.mint}16` : 'rgba(245,242,235,0.04)',
+              }}>
+                <span>{item.icon}</span>{item.label}
+              </Link>
+            )
+          })}
+        </nav>
+      </aside>
+    )
+  }
 
   return (
     <aside style={{
