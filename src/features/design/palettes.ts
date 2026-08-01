@@ -82,6 +82,71 @@ export const PALETTES: Palette[] = [
     accent:     '#39ff14',  // verde neon
     text:       '#ffffff',
   },
+  // ── Paletas con fondo NEGRO ─────────────────────────────────────────────────
+  {
+    id: 'negro_oro',
+    name: 'Negro Oro',
+    background: '#000000',
+    primary:    '#F5C518',  // dorado intenso
+    accent:     '#FFFFFF',  // blanco como contraste elegante
+    text:       '#ffffff',
+  },
+  {
+    id: 'negro_neon',
+    name: 'Negro Neón',
+    background: '#000000',
+    primary:    '#39ff14',  // verde neon sobre negro puro
+    accent:     '#00c8ff',
+    text:       '#ffffff',
+  },
+  {
+    id: 'negro_rojo',
+    name: 'Negro Rojo',
+    background: '#050505',
+    primary:    '#FF2E2E',  // rojo vivo
+    accent:     '#FF8C00',
+    text:       '#ffffff',
+  },
+  {
+    id: 'negro_celeste',
+    name: 'Negro Celeste',
+    background: '#000000',
+    primary:    '#00D4FF',  // celeste eléctrico
+    accent:     '#7DF9FF',
+    text:       '#ffffff',
+  },
+  {
+    id: 'negro_violeta',
+    name: 'Negro Violeta',
+    background: '#0a0a0a',
+    primary:    '#A855F7',  // violeta vibrante
+    accent:     '#F0ABFC',
+    text:       '#ffffff',
+  },
+  {
+    id: 'negro_rosa',
+    name: 'Negro Rosa',
+    background: '#000000',
+    primary:    '#FF2D78',  // rosa intenso
+    accent:     '#00E5FF',
+    text:       '#ffffff',
+  },
+  {
+    id: 'negro_amarillo',
+    name: 'Negro Amarillo',
+    background: '#050505',
+    primary:    '#FFE600',  // amarillo eléctrico
+    accent:     '#FF9500',
+    text:       '#ffffff',
+  },
+  {
+    id: 'negro_blanco',
+    name: 'Negro & Blanco',
+    background: '#000000',
+    primary:    '#FFFFFF',  // monocromo elegante
+    accent:     '#B0B0B0',
+    text:       '#ffffff',
+  },
   // ── Paletas con fondo claro ─────────────────────────────────────────────────
   {
     id: 'blanco_verde',
