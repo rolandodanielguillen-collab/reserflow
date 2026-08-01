@@ -90,7 +90,7 @@ async function handleStart(chatId: string, text: string) {
         where: { id: brand.id },
         data: { telegramChatId: chatId, telegramLinkCode: null },
       })
-      await tgSendMessage(chatId, `✅ Chat vinculado con <b>${brand.brandName ?? 'tu marca'}</b>.\n\nMandame la foto de un flyer y armo la publicación. Si necesito algo, te pregunto por acá; el resultado te llega para aprobar con un botón.`)
+      await tgSendMessage(chatId, `✅ Chat vinculado con <b>${brand.brandName ?? 'tu marca'}</b>.\n\nMandame la foto de un flyer y armo la publicación. Si falta un dato te lo pregunto por acá, y cuando esté listo te paso el link para revisar, editar y publicar desde la web.`)
       return
     }
     await tgSendMessage(chatId, '❌ Código de vinculación inválido o ya usado. Generá uno nuevo en Ajustes → Telegram.')
