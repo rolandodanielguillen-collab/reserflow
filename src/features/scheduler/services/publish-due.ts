@@ -50,11 +50,17 @@ export async function publishDuePosts(): Promise<PublishDueResult> {
       const postTag = `[${post.id.slice(0, 8)}]`
       const currentRetry = (post.retryCount ?? 0) + (post.status === "failed" ? 1 : 0)
       try {
-        console.log(postTag, "Processing:", post.title, "| format:", post.publishFormat, "| retry:", currentRetry)
-        await prismaAdmin.carousel.update({
-          where: { id: post.id },
+        // Claim ATÓMICO: solo un proceso (cron o disparo inmediato) puede
+        // tomar la pieza — imposible publicar dos veces la misma.
+        const claimed = await prismaAdmin.carousel.updateMany({
+          where: { id: post.id, status: { in: ["scheduled", "failed"] } },
           data: { status: "publishing", retryCount: currentRetry, failReason: null },
         })
+        if (claimed.count === 0) {
+          console.log(postTag, "ya tomada por otro proceso, salto")
+          return { id: post.id, status: "skipped" }
+        }
+        console.log(postTag, "Processing:", post.title, "| format:", post.publishFormat, "| retry:", currentRetry)
 
         const isReel = post.publishFormat === "reel"
         let publishResult: { success?: boolean; postId?: string; permalink?: string; error?: string }

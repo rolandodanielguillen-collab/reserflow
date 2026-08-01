@@ -49,7 +49,7 @@ function HeadlineStrip({ pieces, dark }: { pieces: RichPiece[]; dark: boolean })
     ? { panel: T.navySoft, ink: T.cream, inkSoft: 'rgba(245,242,235,0.65)', line: 'rgba(245,242,235,0.08)' }
     : { panel: '#fff', ink: T.navy, inkSoft: 'rgba(15,30,61,0.65)', line: 'rgba(15,30,61,0.08)' }
 
-  const counts = { total: pieces.length, publicado: 0, aprobado: 0, programado: 0, pendiente: 0, borrador: 0, fallido: 0 }
+  const counts = { total: pieces.length, publicado: 0, publicando: 0, aprobado: 0, programado: 0, pendiente: 0, borrador: 0, fallido: 0 }
   pieces.forEach(p => { counts[dbToUI(p.dbStatus)]++ })
 
   const stats = [

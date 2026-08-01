@@ -384,14 +384,13 @@ export function Modal({ piece, dark, onClose, onStatusChange, onRefresh }: {
                 disabled={isPending || publishing}
                 onClick={async () => {
                   setPublishing(true)
-                  setFeedback({ type: 'ok', msg: 'Renderizando y publicando... (~1 min)' })
                   try {
                     const result = await publishCarouselNow(piece.dbId)
                     if ('error' in result && result.error) {
                       setFeedback({ type: 'err', msg: result.error })
                     } else {
-                      setFeedback({ type: 'ok', msg: 'Publicado en Instagram ✓' })
-                      onStatusChange(piece.dbId, 'published')
+                      setFeedback({ type: 'ok', msg: '🚀 Publicándose en segundo plano — aviso por Telegram al terminar' })
+                      onStatusChange(piece.dbId, 'publishing')
                     }
                   } catch (e) {
                     setFeedback({ type: 'err', msg: e instanceof Error ? e.message : 'Error publicando' })

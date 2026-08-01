@@ -33,10 +33,11 @@ export function argInputToDate(localInput: string): Date {
 }
 
 // ── Status system ─────────────────────────────────────────────────────────
-export type UIStatus = 'borrador' | 'pendiente' | 'aprobado' | 'programado' | 'publicado' | 'fallido'
+export type UIStatus = 'borrador' | 'pendiente' | 'aprobado' | 'programado' | 'publicando' | 'publicado' | 'fallido'
 
 export function dbToUI(s: string): UIStatus {
   if (s === 'published')  return 'publicado'
+  if (s === 'publishing') return 'publicando'
   if (s === 'approved')   return 'aprobado'
   if (s === 'scheduled')  return 'programado'
   if (s === 'review')     return 'pendiente'
@@ -57,6 +58,7 @@ export const STATUS_META: Record<UIStatus, { color: string; label: string }> = {
   pendiente: { color: T.amber,     label: 'Pendiente'  },
   aprobado:  { color: T.mint,      label: 'Aprobado'   },
   programado:{ color: '#6B9FFF',   label: 'Programado' },
+  publicando:{ color: '#9B6BFF',   label: 'Publicando' },
   publicado: { color: T.navy,      label: 'Publicado'  },
   fallido:   { color: '#E05252',   label: 'Fallido'    },
 }

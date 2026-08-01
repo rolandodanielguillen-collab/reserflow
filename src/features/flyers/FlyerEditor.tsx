@@ -154,11 +154,13 @@ export function FlyerEditor({ initialPieceId }: { initialPieceId?: string | null
     if (dirty && !(await guardar())) return
     if (!confirm(`¿Publicar "${sel.title}" en Instagram ahora?`)) return
     setBusy('publicar')
-    setMsg({ ok: true, text: 'Renderizando y publicando... (~1-2 min)' })
     const res = await publishCarouselNow(sel.id)
     setBusy(null)
     if ('error' in res && res.error) setMsg({ ok: false, text: res.error })
-    else { setMsg({ ok: true, text: '✅ Publicado en Instagram' }); refresh() }
+    else {
+      setMsg({ ok: true, text: '🚀 Publicándose en segundo plano — podés cerrar esta página. Te llega la confirmación por Telegram (~2-4 min).' })
+      refresh()
+    }
   }
 
   async function programar() {
@@ -458,7 +460,12 @@ export function FlyerEditor({ initialPieceId }: { initialPieceId?: string | null
                 {busy === 'guardar' ? 'Guardando...' : dirty ? '💾 Guardar diseño' : 'Diseño guardado ✓'}
               </button>
 
-              {sel.status !== 'published' && (
+              {sel.status === 'publishing' && (
+                <div style={{ padding: '12px 14px', borderRadius: 10, background: '#9B6BFF18', color: '#B99CFF', fontFamily: FD, fontWeight: 600, fontSize: 13, textAlign: 'center', border: '1px solid #9B6BFF40' }}>
+                  🚀 Publicándose... te aviso por Telegram (podés cerrar la página)
+                </div>
+              )}
+              {sel.status !== 'published' && sel.status !== 'publishing' && (
                 <>
                   <button disabled={!!busy} onClick={publicar} style={{ all: 'unset', cursor: 'pointer', padding: '12px 0', borderRadius: 10, background: 'rgba(245,242,235,0.07)', border: `1.5px solid ${T.mint}66`, color: T.mint, fontFamily: FD, fontWeight: 700, fontSize: 14, textAlign: 'center', opacity: busy === 'publicar' ? 0.6 : 1 }}>
                     {busy === 'publicar' ? 'Publicando...' : '⚡ Publicar ahora en Instagram'}

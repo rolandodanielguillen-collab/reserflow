@@ -2,10 +2,9 @@
 
 import { prismaRls } from '@/lib/prisma-rls'
 import { auth } from '@/lib/auth'
-import { publishToInstagram } from '@/features/scheduler/services/instagram-publish'
-import { sendApprovalRequest, notifyPublished, notifyPublishFailed } from '@/features/notifications/services/ycloud'
-import { renderCarouselMedia } from '@/features/publishing/services/render-event-media'
+import { sendApprovalRequest } from '@/features/notifications/services/ycloud'
 import { normalizeSlides } from '@/features/content-studio/slide-utils'
+import { publishDuePosts } from '@/features/scheduler/services/publish-due'
 
 export async function approveCarousel(carouselId: string) {
   const session = await auth()
@@ -82,8 +81,11 @@ export async function requestWhatsAppApproval(carouselId: string) {
 }
 
 /**
- * Publica el carrusel COMPLETO ahora: renderiza todos los slides server-side
- * con Remotion (mismo componente que el preview) y publica via Graph API.
+ * "Publicar ahora" = ENCOLAR con salida inmediata: marca la pieza para
+ * publicación ya y dispara el motor en segundo plano (mismo motor que el
+ * cron: render + publicación + reintentos + aviso por Telegram).
+ * NO depende de que la página siga abierta, y el claim atómico del motor
+ * hace imposible el doble post aunque se cliquee dos veces.
  */
 export async function publishCarouselNow(carouselId: string) {
   const session = await auth()
@@ -91,60 +93,24 @@ export async function publishCarouselNow(carouselId: string) {
 
   const carousel = await prismaRls.carousel.findFirst({
     where: { id: carouselId },
-    select: { title: true, caption: true, slidesJson: true, darkMode: true, slideImageUrls: true },
+    select: { status: true, slidesJson: true, slideImageUrls: true },
   })
-
   if (!carousel) return { error: 'Carrusel no encontrado' }
 
-  let imageUrls: string[] = []
+  if (carousel.status === 'published') return { error: 'Esta pieza ya está publicada en Instagram.' }
+  if (carousel.status === 'publishing') return { error: 'Ya se está publicando — te llega la confirmación por Telegram.' }
 
-  // Imágenes ya renderizadas (o subidas a mano) → usarlas
-  if (carousel.slideImageUrls) {
-    try {
-      const parsed = JSON.parse(carousel.slideImageUrls) as string[]
-      if (Array.isArray(parsed)) imageUrls = parsed
-    } catch { /* formato viejo → re-render abajo */ }
-  }
+  const hasImages = !!carousel.slideImageUrls && carousel.slideImageUrls !== '[]'
+  const hasSlides = normalizeSlides(carousel.slidesJson).length > 0
+  if (!hasImages && !hasSlides) return { error: 'Este carrusel no tiene slides ni imágenes para publicar.' }
 
-  if (imageUrls.length === 0) {
-    const slides = normalizeSlides(carousel.slidesJson)
-    if (slides.length === 0) {
-      return { error: 'Este carrusel no tiene slides para renderizar.' }
-    }
-    const rendered = await renderCarouselMedia({
-      carouselId,
-      userId: session.user.id,
-      slides,
-      dark: carousel.darkMode,
-    })
-    if ('error' in rendered) return { error: `Render: ${rendered.error}` }
-    imageUrls = rendered.urls
-    await prismaRls.carousel.updateMany({
-      where: { id: carouselId },
-      data: { slideImageUrls: JSON.stringify(imageUrls) },
-    })
-  }
-
-  const result = await publishToInstagram({
-    carouselId,
-    imageUrls,
-    caption: carousel.caption ?? carousel.title,
+  await prismaRls.carousel.updateMany({
+    where: { id: carouselId },
+    data: { status: 'scheduled', scheduledAt: new Date(), failReason: null, retryCount: 0 },
   })
 
-  // Best-effort WhatsApp notification
-  const brand = await prismaRls.brandSettings.findFirst({
-    where: {},
-    select: { whatsappPhone: true },
-  })
+  // Fire-and-forget: el proceso del servidor sigue aunque el browser se cierre
+  publishDuePosts().catch(err => console.error('[publicar-ahora] motor falló:', err))
 
-  const phone = brand?.whatsappPhone as string | undefined
-  if (phone) {
-    if ('error' in result && result.error) {
-      await notifyPublishFailed(carousel.title, result.error, phone).catch(() => {})
-    } else if ('permalink' in result && result.permalink) {
-      await notifyPublished(carousel.title, result.permalink, phone).catch(() => {})
-    }
-  }
-
-  return result
+  return { success: true, queued: true }
 }
