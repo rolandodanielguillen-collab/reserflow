@@ -54,7 +54,7 @@ const STORY_BADGE_TEXT = 'INSCRIBITE EN LA APP'
  * flyer centrado y el badge "INSCRIBITE EN LA APP" en la banda libre de abajo
  * (no tapa nada del flyer). sharp + SVG, cero Chrome en el server.
  */
-async function badgeStoryImage(parentId: string, imageUrl: string): Promise<string> {
+export async function badgeStoryImage(parentId: string, imageUrl: string): Promise<string> {
   const res = await fetch(imageUrl)
   if (!res.ok) throw new Error(`No pude descargar ${imageUrl} (${res.status})`)
   const flyer = Buffer.from(await res.arrayBuffer())

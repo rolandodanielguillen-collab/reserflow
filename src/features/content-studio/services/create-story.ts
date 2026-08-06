@@ -2,6 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { prismaAdmin } from '@/lib/prisma-admin'
+import { badgeStoryImage } from '@/features/scheduler/services/story-schedule'
 
 export type StorySource = { id: string; title: string; imageUrl: string; kind: 'flyer' | 'asset' }
 
@@ -44,6 +45,7 @@ export async function createStory(input: {
   scheduledAtIso: string
   title?: string
   parentCarouselId?: string
+  withBadge?: boolean
 }): Promise<{ success?: boolean; error?: string }> {
   const session = await auth()
   if (!session?.user?.id) return { error: 'No autenticado' }
@@ -66,6 +68,16 @@ export async function createStory(input: {
     parentId = parent?.id ?? null
   }
 
+  // Badge opcional: si falla, la historia sale con la imagen elegida tal cual
+  let storyImage = imageUrl
+  if (input.withBadge) {
+    try {
+      storyImage = await badgeStoryImage(parentId ?? 'manual', imageUrl)
+    } catch (err) {
+      console.error('[create-story] badge falló, uso imagen plana:', err)
+    }
+  }
+
   await prismaAdmin.carousel.create({
     data: {
       userId: session.user.id,
@@ -73,8 +85,8 @@ export async function createStory(input: {
       publishFormat: 'story',
       status: 'scheduled',
       scheduledAt,
-      coverImageUrl: imageUrl,
-      slideImageUrls: JSON.stringify([imageUrl]),
+      coverImageUrl: storyImage,
+      slideImageUrls: JSON.stringify([storyImage]),
       parentCarouselId: parentId,
     },
   })

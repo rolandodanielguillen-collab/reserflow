@@ -21,6 +21,7 @@ export function NewStoryModal({ dark, onClose, onCreated }: {
   const [selected, setSelected] = useState<StorySource | null>(null)
   const [title, setTitle]       = useState('')
   const [when, setWhen]         = useState(tomorrowAt10)
+  const [withBadge, setWithBadge] = useState(false)
   const [saving, setSaving]     = useState(false)
   const [error, setError]       = useState<string | null>(null)
 
@@ -38,6 +39,7 @@ export function NewStoryModal({ dark, onClose, onCreated }: {
   function pick(s: StorySource) {
     setSelected(s)
     setTitle(s.kind === 'flyer' ? `Historia · ${s.title}` : 'Historia')
+    setWithBadge(s.kind === 'flyer')
   }
 
   async function handleCreate() {
@@ -49,6 +51,7 @@ export function NewStoryModal({ dark, onClose, onCreated }: {
       scheduledAtIso: argInputToDate(when).toISOString(),
       title,
       parentCarouselId: selected.kind === 'flyer' ? selected.id : undefined,
+      withBadge,
     })
     setSaving(false)
     if (res.error) { setError(res.error); return }
@@ -138,6 +141,18 @@ export function NewStoryModal({ dark, onClose, onCreated }: {
             />
           </label>
         </div>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, cursor: 'pointer', width: 'fit-content' }}>
+          <input
+            type="checkbox"
+            checked={withBadge}
+            onChange={e => setWithBadge(e.target.checked)}
+            style={{ width: 16, height: 16, accentColor: T.mint, cursor: 'pointer' }}
+          />
+          <span style={{ fontFamily: FM, fontSize: 11, color: th.ink, letterSpacing: '0.04em' }}>
+            Badge <b>INSCRIBITE EN LA APP</b> (formato historia 9:16 con banda)
+          </span>
+        </label>
 
         {error && (
           <div style={{ marginTop: 12, fontFamily: FM, fontSize: 11, color: '#E05252' }}>{error}</div>
