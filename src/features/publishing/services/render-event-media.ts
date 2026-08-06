@@ -73,6 +73,14 @@ export async function renderCarouselMedia(opts: {
 
   const urls = [...stills.urls]
 
+  // El still del flyer 1 se persiste como cover: el carrusel publicado lo
+  // reemplaza por el video de intro, pero las historias y el Studio lo necesitan
+  if (stills.urls[0]) {
+    await prismaAdmin.carousel
+      .update({ where: { id: opts.carouselId }, data: { coverImageUrl: stills.urls[0] } })
+      .catch(e => console.error("[event-media] no pude guardar coverImageUrl:", e))
+  }
+
   // Portada animada en lugar del still del slide 1
   try {
     const introUrl = await renderIntroVideo(opts.carouselId, stills.urls[0]!, stills.urls[1]!)
