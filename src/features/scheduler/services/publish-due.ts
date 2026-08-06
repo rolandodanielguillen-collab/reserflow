@@ -6,6 +6,7 @@ import { normalizeSlides } from "@/features/content-studio/slide-utils"
 import {
   publishToInstagram,
   publishReelToInstagram,
+  publishStoryToInstagram,
 } from "@/features/scheduler/services/instagram-publish"
 
 const MAX_RETRIES = 3
@@ -63,9 +64,32 @@ export async function publishDuePosts(): Promise<PublishDueResult> {
         console.log(postTag, "Processing:", post.title, "| format:", post.publishFormat, "| retry:", currentRetry)
 
         const isReel = post.publishFormat === "reel"
+        const isStory = post.publishFormat === "story"
         let publishResult: { success?: boolean; postId?: string; permalink?: string; error?: string }
 
-        if (isReel) {
+        if (isStory) {
+          const storyImage = post.coverImageUrl
+            ?? (post.slideImageUrls
+              ? (post.slideImageUrls.startsWith("[")
+                  ? (JSON.parse(post.slideImageUrls) as string[])[0]
+                  : post.slideImageUrls.split(",")[0]?.trim())
+              : undefined)
+          if (!storyImage) {
+            const reason = "Historia sin imagen (coverImageUrl vacío)"
+            await prismaAdmin.carousel.update({
+              where: { id: post.id },
+              data: { status: "failed", failReason: reason, retryCount: MAX_RETRIES },
+            })
+            return { id: post.id, status: "failed", reason }
+          }
+
+          console.log(postTag, "Publishing as Story...")
+          publishResult = await publishStoryToInstagram({
+            carouselId: post.id,
+            imageUrl: storyImage,
+            userId: post.userId,
+          })
+        } else if (isReel) {
           let videoUrl = post.videoUrl
 
           if (!videoUrl) {

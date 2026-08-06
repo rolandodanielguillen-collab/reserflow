@@ -21,6 +21,97 @@ interface ReelsPublishParams {
   userId?: string
 }
 
+interface StoryPublishParams {
+  carouselId: string
+  imageUrl: string
+  userId?: string
+}
+
+/**
+ * Publica una imagen como Historia (media_type STORIES, dura 24h).
+ * Las historias no llevan caption por API; Instagram centra la imagen.
+ */
+export async function publishStoryToInstagram({ carouselId, imageUrl, userId: passedUserId }: StoryPublishParams) {
+  let userId = passedUserId
+  const isCron = !!passedUserId
+
+  if (!isCron) {
+    const session = await auth()
+    userId = session?.user?.id
+  }
+
+  if (!userId) return { error: 'No autenticado' }
+  const db = isCron ? prismaAdmin : prismaRls
+
+  const brand = await db.brandSettings.findFirst({
+    where: { userId },
+    select: { metaAccessToken: true, instagramAccountId: true },
+  })
+
+  if (!brand?.metaAccessToken || !brand?.instagramAccountId) {
+    return { error: 'Configura el token de Meta y el ID de cuenta Instagram en Ajustes.' }
+  }
+
+  const token = decryptSecret(brand.metaAccessToken)!
+  const igId  = brand.instagramAccountId
+  const BASE  = 'https://graph.facebook.com/v21.0'
+
+  try {
+    const params = new URLSearchParams({
+      image_url:    imageUrl,
+      media_type:   'STORIES',
+      access_token: token,
+    })
+    const containerRes  = await fetch(`${BASE}/${igId}/media`, { method: 'POST', body: params })
+    const containerJson = await containerRes.json() as { id?: string; error?: { message: string } }
+    if (!containerJson.id) throw new Error(containerJson.error?.message ?? 'Error creando contenedor de historia')
+    const containerId = containerJson.id
+
+    const checkStatus = async () => {
+      const r = await fetch(`${BASE}/${containerId}?fields=status_code,status&access_token=${token}`)
+      return r.json() as Promise<{ status_code?: string; status?: string }>
+    }
+
+    let containerStatus = await checkStatus()
+    let attempts = 0
+    while (containerStatus.status_code !== 'FINISHED' && attempts < 30) {
+      if (containerStatus.status_code === 'ERROR') {
+        throw new Error(`Instagram container error: ${containerStatus.status ?? 'unknown'}`)
+      }
+      await new Promise(r => setTimeout(r, 2_000))
+      containerStatus = await checkStatus()
+      attempts++
+    }
+    if (containerStatus.status_code !== 'FINISHED') {
+      throw new Error(`Instagram container no listo después de 60s (status: ${containerStatus.status_code})`)
+    }
+
+    const pubParams = new URLSearchParams({ creation_id: containerId, access_token: token })
+    const pubRes    = await fetch(`${BASE}/${igId}/media_publish`, { method: 'POST', body: pubParams })
+    const pubJson   = await pubRes.json() as { id?: string; error?: { message: string } }
+    if (!pubJson.id) throw new Error(pubJson.error?.message ?? 'Error publicando historia')
+
+    await db.carousel.update({
+      where: { id: carouselId },
+      data: {
+        instagramPostId: pubJson.id,
+        publishedAt:     new Date(),
+        status:          'published',
+      },
+    })
+
+    return { success: true, postId: pubJson.id }
+
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Error desconocido'
+    await db.carousel.update({
+      where: { id: carouselId },
+      data: { status: 'failed' },
+    })
+    return { error: message }
+  }
+}
+
 export async function publishReelToInstagram({ carouselId, videoUrl, caption, userId: passedUserId }: ReelsPublishParams) {
   let userId = passedUserId
   const isCron = !!passedUserId

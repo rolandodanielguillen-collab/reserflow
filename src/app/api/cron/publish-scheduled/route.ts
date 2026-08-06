@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { publishDuePosts } from "@/features/scheduler/services/publish-due"
 import { warnExpiringMetaTokens } from "@/features/scheduler/services/token-watch"
 import { refreshStaleInsights } from "@/features/scheduler/services/insights"
+import { ensureStoriesForUpcomingEvents } from "@/features/scheduler/services/story-schedule"
 
 export async function GET(request: Request) {
   console.log("[Cron] === Publish-scheduled START ===", new Date().toISOString())
@@ -19,6 +20,7 @@ export async function GET(request: Request) {
 
   await warnExpiringMetaTokens().catch(e => console.error("[Cron] token-watch:", e))
   await refreshStaleInsights().catch(e => console.error("[Cron] insights:", e))
+  await ensureStoriesForUpcomingEvents().catch(e => console.error("[Cron] story-schedule:", e))
   const result = await publishDuePosts()
   return NextResponse.json(result)
 }

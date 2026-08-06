@@ -153,7 +153,7 @@ model Carousel {
   hashtags         String?       @db.Text
 
   // Media
-  publishFormat  String   @default("carousel") // "carousel" | "reel"
+  publishFormat  String   @default("carousel") // "carousel" | "reel" | "story"
   reelScriptId   String?  // Remotion script ID for auto-rendering
   coverImageUrl  String?  @db.Text
   slideImageUrls String?  @db.LongText
@@ -180,6 +180,9 @@ model Carousel {
   // Campañas
   campaignId String?
 
+  // Historias automáticas: una fila publishFormat "story" apunta a su flyer padre
+  parentCarouselId String?
+
   // Error handling
   failReason String? @db.Text
   retryCount Int     @default(0)
@@ -190,9 +193,12 @@ model Carousel {
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   contentIdea ContentIdea? @relation(fields: [contentIdeaId], references: [id], onDelete: SetNull)
   campaign    Campaign?    @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  parent      Carousel?    @relation("CarouselStories", fields: [parentCarouselId], references: [id], onDelete: Cascade)
+  stories     Carousel[]   @relation("CarouselStories")
 
   @@index([userId, status])
   @@index([scheduledAt])
+  @@index([parentCarouselId])
   @@map("carousels")
 }
 
