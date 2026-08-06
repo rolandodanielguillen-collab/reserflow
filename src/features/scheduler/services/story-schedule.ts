@@ -1,5 +1,7 @@
+import sharp from 'sharp'
 import { prismaAdmin } from '@/lib/prisma-admin'
 import { Prisma } from '@/generated/prisma/client'
+import { uploadFile } from '@/lib/storage'
 import { notifyOperator } from '@/features/telegram/notify'
 import type { ExtractedFlyer } from '@/features/ingest/flyer-ingest'
 
@@ -45,6 +47,38 @@ export function firstImageUrl(coverImageUrl: string | null, slideImageUrls: stri
     .find(u => !isVideoUrl(u))
 }
 
+const STORY_BADGE_TEXT = 'INSCRIBITE EN LA APP'
+
+/**
+ * Compone el badge "INSCRIBITE EN LA APP" sobre la imagen del flyer con
+ * sharp + SVG (cero Chrome en el server). Píldora blanca abajo al centro,
+ * dimensiones relativas al ancho para cualquier tamaño de flyer.
+ */
+async function badgeStoryImage(parentId: string, imageUrl: string): Promise<string> {
+  const res = await fetch(imageUrl)
+  if (!res.ok) throw new Error(`No pude descargar ${imageUrl} (${res.status})`)
+  const base = sharp(Buffer.from(await res.arrayBuffer()))
+  const meta = await base.metadata()
+  const W = meta.width ?? 1080
+  const H = meta.height ?? 1350
+
+  const pw = Math.round(W * 0.64)             // ancho píldora
+  const ph = Math.round(W * 0.09)             // alto píldora
+  const px = Math.round((W - pw) / 2)
+  const py = Math.round(H - H * 0.045 - ph)   // abajo, margen 4.5%
+  const fontSize = Math.round(ph * 0.4)
+  const textY = Math.round(py + ph / 2 + fontSize * 0.35)
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
+  <rect x="${px + 4}" y="${py + 6}" width="${pw}" height="${ph}" rx="${Math.round(ph / 2)}" fill="#000000" fill-opacity="0.25"/>
+  <rect x="${px}" y="${py}" width="${pw}" height="${ph}" rx="${Math.round(ph / 2)}" fill="#FFFFFF"/>
+  <text x="${W / 2}" y="${textY}" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="bold" font-size="${fontSize}" letter-spacing="2" fill="#0F1E3D">${STORY_BADGE_TEXT}</text>
+</svg>`
+
+  const out = await base.composite([{ input: Buffer.from(svg) }]).png().toBuffer()
+  return uploadFile(out, `slides/${parentId}`, 'story-badge.png')
+}
+
 /**
  * Genera las historias pendientes para todo flyer ya publicado cuyo torneo
  * aún no ocurrió y que no tenga historias creadas. Idempotente: corre en cada
@@ -81,6 +115,14 @@ export async function ensureStoriesForUpcomingEvents(): Promise<void> {
       .filter(d => d.getTime() > now.getTime())
     if (slots.length === 0) continue
 
+    // Badge "INSCRIBITE EN LA APP" — si falla, la historia sale con el flyer plano
+    let storyImage = imageUrl
+    try {
+      storyImage = await badgeStoryImage(piece.id, imageUrl)
+    } catch (err) {
+      console.error('[story-schedule] badge falló, uso flyer plano:', err)
+    }
+
     await prismaAdmin.carousel.createMany({
       data: slots.map(scheduledAt => ({
         userId: piece.userId,
@@ -88,8 +130,8 @@ export async function ensureStoriesForUpcomingEvents(): Promise<void> {
         publishFormat: 'story',
         status: 'scheduled',
         scheduledAt,
-        coverImageUrl: imageUrl,
-        slideImageUrls: JSON.stringify([imageUrl]),
+        coverImageUrl: storyImage,
+        slideImageUrls: JSON.stringify([storyImage]),
         parentCarouselId: piece.id,
         darkMode: piece.darkMode,
       })),
