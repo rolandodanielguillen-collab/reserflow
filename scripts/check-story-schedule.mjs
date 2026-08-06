@@ -32,5 +32,13 @@ const dias = slots.map(s => s.toLocaleString('es-PY', { weekday: 'long', hour: '
 assert.ok(dias[0].includes('lunes') && dias[0].includes('10:00'), dias[0])
 assert.ok(dias[1].includes('miércoles') && dias[1].includes('10:00'), dias[1])
 
-console.log('OK — parseEventDate y slots de historias correctos')
+// firstImageUrl: el slide 1 publicado suele ser el VIDEO de intro — debe saltarlo
+const { firstImageUrl } = mod.exports
+assert.strictEqual(
+  firstImageUrl(null, '["https://x.com/intro.mp4","https://x.com/slide1.png","https://x.com/slide2.png"]'),
+  'https://x.com/slide1.png')
+assert.strictEqual(firstImageUrl('https://x.com/cover.png', null), 'https://x.com/cover.png')
+assert.strictEqual(firstImageUrl(null, '["https://x.com/solo-video.mp4"]'), undefined)
+
+console.log('OK — parseEventDate, firstImageUrl y slots de historias correctos')
 console.log('  torneo vie 14/8 →', dias.join(' · '))

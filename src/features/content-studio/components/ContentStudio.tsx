@@ -418,18 +418,22 @@ export function ContentStudio() {
   const [seeding, setSeeding]           = useState(false)
   const [loading, setLoading]           = useState(true)
 
-  // Calendar navigation: start at May 2026
-  const [calYear, setCalYear]   = useState(2026)
-  const [calMonth, setCalMonth] = useState(4) // 0-indexed: 4 = May
+  // Calendar navigation: abre en el mes actual
+  const [calYear, setCalYear]   = useState(() => new Date().getFullYear())
+  const [calMonth, setCalMonth] = useState(() => new Date().getMonth())
 
   function mergePieces(rows: Awaited<ReturnType<typeof getCarousels>>): RichPiece[] {
     const result: RichPiece[] = []
+
+    // Piezas publicadas sin fecha programada: van al calendario por su fecha
+    // de publicación real, no a la sección "sin fecha"
+    const calDate = (r: (typeof rows)[number]) => r.scheduled_at ?? r.published_at
 
     // Template pieces first
     rows.filter(r => r.template_piece_id != null).forEach(row => {
       const tmpl = CONTENT.find(c => c.id === row.template_piece_id)
       if (!tmpl) return
-      result.push({ ...tmpl, dbId: row.id, dbStatus: row.status, scheduledAt: row.scheduled_at, caption: row.caption, isTemplate: true, darkMode: row.dark_mode, imageUrls: row.slide_image_urls })
+      result.push({ ...tmpl, dbId: row.id, dbStatus: row.status, scheduledAt: calDate(row), caption: row.caption, isTemplate: true, darkMode: row.dark_mode, imageUrls: row.slide_image_urls })
     })
 
     // AI-generated pieces
@@ -439,7 +443,7 @@ export function ContentStudio() {
         id: 10000 + i, day: 1, type: 'carousel', variant: 'ai', angle: 'feature',
         audience: 'all', sport: 'mix', hook: row.title,
         slides: slides.length > 0 ? slides : undefined,
-        dbId: row.id, dbStatus: row.status, scheduledAt: row.scheduled_at,
+        dbId: row.id, dbStatus: row.status, scheduledAt: calDate(row),
         caption: row.caption, isTemplate: false, darkMode: row.dark_mode,
         imageUrls: row.slide_image_urls,
       })

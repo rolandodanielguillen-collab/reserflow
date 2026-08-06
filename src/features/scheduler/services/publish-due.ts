@@ -8,6 +8,7 @@ import {
   publishReelToInstagram,
   publishStoryToInstagram,
 } from "@/features/scheduler/services/instagram-publish"
+import { firstImageUrl } from "@/features/scheduler/services/story-schedule"
 
 const MAX_RETRIES = 3
 
@@ -68,12 +69,7 @@ export async function publishDuePosts(): Promise<PublishDueResult> {
         let publishResult: { success?: boolean; postId?: string; permalink?: string; error?: string }
 
         if (isStory) {
-          const storyImage = post.coverImageUrl
-            ?? (post.slideImageUrls
-              ? (post.slideImageUrls.startsWith("[")
-                  ? (JSON.parse(post.slideImageUrls) as string[])[0]
-                  : post.slideImageUrls.split(",")[0]?.trim())
-              : undefined)
+          const storyImage = firstImageUrl(post.coverImageUrl, post.slideImageUrls)
           if (!storyImage) {
             const reason = "Historia sin imagen (coverImageUrl vacío)"
             await prismaAdmin.carousel.update({

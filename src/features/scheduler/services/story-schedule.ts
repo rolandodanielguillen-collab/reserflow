@@ -35,6 +35,16 @@ function parseImageUrls(raw: string | null): string[] {
   }
 }
 
+// El slide 1 de un carrusel publicado suele ser el VIDEO de intro (mp4):
+// la historia necesita la primera imagen real.
+const isVideoUrl = (u: string) => /\.(mp4|mov)(\?|$)/i.test(u)
+
+export function firstImageUrl(coverImageUrl: string | null, slideImageUrls: string | null): string | undefined {
+  return [coverImageUrl, ...parseImageUrls(slideImageUrls)]
+    .filter((u): u is string => !!u)
+    .find(u => !isVideoUrl(u))
+}
+
 /**
  * Genera las historias pendientes para todo flyer ya publicado cuyo torneo
  * aún no ocurrió y que no tenga historias creadas. Idempotente: corre en cada
@@ -63,7 +73,7 @@ export async function ensureStoriesForUpcomingEvents(): Promise<void> {
     const eventDate = parseEventDate(extracted.overrides?.startDate ?? extracted.start_date)
     if (!eventDate || eventDate.getTime() <= now.getTime()) continue
 
-    const imageUrl = piece.coverImageUrl ?? parseImageUrls(piece.slideImageUrls)[0]
+    const imageUrl = firstImageUrl(piece.coverImageUrl, piece.slideImageUrls)
     if (!imageUrl) continue
 
     const slots = STORY_OFFSETS_DAYS
