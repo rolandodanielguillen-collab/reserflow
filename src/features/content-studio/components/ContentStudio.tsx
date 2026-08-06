@@ -9,6 +9,7 @@ import { getCarousels } from '../services/get-carousels'
 import { seedMayCalendar, resetAllToDraft, fixDarkModeAlternation } from '../services/seed-content-calendar'
 import { runDuePublishes } from '@/features/scheduler/services/publish-due-action'
 import { Modal } from './StudioModal'
+import { NewStoryModal } from './NewStoryModal'
 import type { RichPiece } from './studio-shared'
 import { T, FD, FM, ARG_TZ, MONTHS_ES, DAYS_ES, STATUS_META, dbToUI } from './studio-shared'
 
@@ -315,11 +316,11 @@ function PieceCard({ piece, dark, onClick, compact }: { piece: RichPiece; dark: 
 }
 
 // ── Top Bar ───────────────────────────────────────────────────────────────
-function TopBar({ dark, toggleDark, view, setView, filter, setFilter, onReset, onTriggerCron, totalPieces }: {
+function TopBar({ dark, toggleDark, view, setView, filter, setFilter, onReset, onTriggerCron, onNewStory, totalPieces }: {
   dark: boolean; toggleDark: () => void
   view: 'calendar' | 'list'; setView: (v: 'calendar' | 'list') => void
   filter: string; setFilter: (f: string) => void
-  onReset: () => void; onTriggerCron: () => void; totalPieces: number
+  onReset: () => void; onTriggerCron: () => void; onNewStory: () => void; totalPieces: number
 }) {
   const bg      = dark ? T.navyDeep : T.cream
   const ink     = dark ? T.cream : T.navy
@@ -343,6 +344,10 @@ function TopBar({ dark, toggleDark, view, setView, filter, setFilter, onReset, o
       </div>
 
       <div style={{ flex: 1 }}/>
+
+      <button onClick={onNewStory} style={{ all: 'unset', cursor: 'pointer', padding: '7px 14px', borderRadius: 8, background: T.mint, color: T.navy, fontFamily: FD, fontSize: 12, fontWeight: 700, letterSpacing: '-0.01em' }}>
+        + Historia
+      </button>
 
       {totalPieces > 0 && (
         <>
@@ -417,6 +422,7 @@ export function ContentStudio() {
   const [pieces, setPieces]             = useState<RichPiece[]>([])
   const [seeding, setSeeding]           = useState(false)
   const [loading, setLoading]           = useState(true)
+  const [showNewStory, setShowNewStory] = useState(false)
 
   // Calendar navigation: abre en el mes actual
   const [calYear, setCalYear]   = useState(() => new Date().getFullYear())
@@ -530,6 +536,7 @@ export function ContentStudio() {
         filter={filter} setFilter={setFilter}
         onReset={handleReset}
         onTriggerCron={handleTriggerCron}
+        onNewStory={() => setShowNewStory(true)}
         totalPieces={pieces.length}
       />
 
@@ -568,6 +575,14 @@ export function ContentStudio() {
           onClose={() => setSelectedDbId(null)}
           onStatusChange={handleStatusChange}
           onRefresh={loadPieces}
+        />
+      )}
+
+      {showNewStory && (
+        <NewStoryModal
+          dark={dark}
+          onClose={() => setShowNewStory(false)}
+          onCreated={() => { setShowNewStory(false); loadPieces() }}
         />
       )}
     </div>
