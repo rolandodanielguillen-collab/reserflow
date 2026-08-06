@@ -50,32 +50,45 @@ export function firstImageUrl(coverImageUrl: string | null, slideImageUrls: stri
 const STORY_BADGE_TEXT = 'INSCRIBITE EN LA APP'
 
 /**
- * Compone el badge "INSCRIBITE EN LA APP" sobre la imagen del flyer con
- * sharp + SVG (cero Chrome en el server). Píldora blanca abajo al centro,
- * dimensiones relativas al ancho para cualquier tamaño de flyer.
+ * Arma la imagen de la historia en 9:16 real (1080×1920): lienzo navy con el
+ * flyer centrado y el badge "INSCRIBITE EN LA APP" en la banda libre de abajo
+ * (no tapa nada del flyer). sharp + SVG, cero Chrome en el server.
  */
 async function badgeStoryImage(parentId: string, imageUrl: string): Promise<string> {
   const res = await fetch(imageUrl)
   if (!res.ok) throw new Error(`No pude descargar ${imageUrl} (${res.status})`)
-  const base = sharp(Buffer.from(await res.arrayBuffer()))
-  const meta = await base.metadata()
+  const flyer = Buffer.from(await res.arrayBuffer())
+  const meta = await sharp(flyer).metadata()
   const W = meta.width ?? 1080
   const H = meta.height ?? 1350
 
-  const pw = Math.round(W * 0.64)             // ancho píldora
-  const ph = Math.round(W * 0.09)             // alto píldora
+  const CH = Math.round((W * 16) / 9)         // lienzo 9:16 (1920 para 1080)
+  if (H >= CH - 120) throw new Error('flyer sin banda libre para el badge')
+  const flyerY = Math.round((CH - H) * 0.42)  // flyer apenas arriba del centro
+
+  const pw = Math.round(W * 0.64)             // píldora
+  const ph = Math.round(W * 0.09)
   const px = Math.round((W - pw) / 2)
-  const py = Math.round(H - H * 0.045 - ph)   // abajo, margen 4.5%
+  const bandTop = flyerY + H
+  const py = Math.round(bandTop + (CH - bandTop - ph) / 2)
   const fontSize = Math.round(ph * 0.4)
   const textY = Math.round(py + ph / 2 + fontSize * 0.35)
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
-  <rect x="${px + 4}" y="${py + 6}" width="${pw}" height="${ph}" rx="${Math.round(ph / 2)}" fill="#000000" fill-opacity="0.25"/>
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${CH}">
+  <rect x="${px + 4}" y="${py + 6}" width="${pw}" height="${ph}" rx="${Math.round(ph / 2)}" fill="#000000" fill-opacity="0.35"/>
   <rect x="${px}" y="${py}" width="${pw}" height="${ph}" rx="${Math.round(ph / 2)}" fill="#FFFFFF"/>
   <text x="${W / 2}" y="${textY}" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="bold" font-size="${fontSize}" letter-spacing="2" fill="#0F1E3D">${STORY_BADGE_TEXT}</text>
 </svg>`
 
-  const out = await base.composite([{ input: Buffer.from(svg) }]).png().toBuffer()
+  const out = await sharp({
+    create: { width: W, height: CH, channels: 4, background: '#0F1E3D' },
+  })
+    .composite([
+      { input: flyer, top: flyerY, left: 0 },
+      { input: Buffer.from(svg), top: 0, left: 0 },
+    ])
+    .png()
+    .toBuffer()
   return uploadFile(out, `slides/${parentId}`, 'story-badge.png')
 }
 
